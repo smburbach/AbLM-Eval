@@ -18,11 +18,8 @@ def run_inference(args: argparse.Namespace):
     model, tokenizer = load_model_and_tokenizer(args.model_path, task="mlm")
 
     # load & process datatset
-    files = {
-        "test": args.data_path
-    }
     tokenized_dataset = load_and_tokenize(
-        data_files=files,
+        data_path=args.data_path,
         tokenizer=tokenizer,
         heavy_column="sequence_aa_heavy",
         light_column="sequence_aa_light",
@@ -39,12 +36,12 @@ def run_inference(args: argparse.Namespace):
         data_collator=collator,
         compute_metrics=ComputeMetricsForMaskedLM(return_moe_losses=True),
         args=TrainingArguments(
-            output_dir="./results/", report_to="none", per_device_eval_batch_size=64
+            output_dir=args.output_dir, report_to="none", per_device_eval_batch_size=64
         ),
     )
-    res = trainer.evaluate(tokenized_dataset["test"])
-    res["model"] = args.model_name
-    res["model_path"] = str(args.model_path)
+    results = trainer.evaluate(tokenized_dataset)
+    results["model"] = args.model_name
+    results["model_path"] = str(args.model_path)
 
-    res_df = pd.DataFrame([res])
-    res_df.to_csv(args.output_file, index=False)
+    results_df = pd.DataFrame([results])
+    results_df.to_csv(f"{args.output_dir}/{args.model_name}/test-inference.csv", index=False)
