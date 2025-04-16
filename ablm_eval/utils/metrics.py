@@ -13,6 +13,7 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
+from transformers import EvalPrediction
 
 __all__ = [
     "ComputeMetricsForMaskedLM",
@@ -65,57 +66,54 @@ class ComputeMetricsBase:
 
 class ComputeMetricsForMaskedLM(ComputeMetricsBase):
 
-    def __init__(self, positive_label: int = 1):
+    def __init__(self, positive_label: int = 1, return_moe_losses=False):
         super().__init__(positive_label=positive_label)
+        self.return_moe_losses = return_moe_losses
         self.lm_loss = None
         self.z_loss = None
         self.aux_loss = None
 
-    def __call__(self, eval_preds):
+    def __call__(self, eval_preds: EvalPrediction):
         # process eval_preds
-        self.logits, self.labels = eval_preds
-        if isinstance(output, tuple):
-            # top k
-            if len(self.logits) == 4:
-                logits, z_loss, aux_loss, lm_loss = self.logits
+        logits, labels = eval_preds
+        if isinstance(logits, tuple):
+            if self.return_moe_losses: # extract moe losses if present
+                # top k
+                if len(logits) == 4:
+                    _, z_loss, aux_loss, lm_loss = logits
+                    self.aux_loss = aux_loss.mean()
+                # expert choice
+                elif len(self.logits) == 3:
+                    _, z_loss, lm_loss = logits
+                
                 self.lm_loss = lm_loss.mean()
                 self.z_loss = z_loss.mean()
-                self.aux_loss = aux_loss.mean()
-            # expert choice
-            elif len(self.logits) == 3:
-                logits, z_loss, lm_loss = self.logits
-                self.lm_loss = lm_loss.mean()
-                self.z_loss = z_loss.mean()
-            else:
-                raise Exception()
+            
+            logits = logits[0]  # logits is the first element of the tuple
 
-        # conver to tensors
-        self.logits = torch.Tensor(self.logits)
-        self.labels = torch.Tensor(self.labels)
-
-        # preds & probs
-        self.predictions = torch.argmax(logits, dim=-1)
-        self.probabilities = torch.softmax(logits, dim=-1).detach().cpu().numpy()
+        # get as tensors
+        logits = torch.tensor(logits)
+        labels = torch.tensor(labels)
+        predictions = torch.argmax(logits, dim=-1)
 
         # mask out padding
-        mask = self.labels != -100
-        self.labels = self.labels[mask]
-        self.predictions = self.predictions[mask.numpy()]
+        mask = (labels != -100)
+        self.logits = logits[mask]
+        self.labels = labels[mask]
+        self.predictions = predictions[mask]
 
         return self.compute_metrics()
 
     def compute_metrics(self):
-        result = {
-            "accuracy": self.accuracy(),
-            "perplexity": self.perplexity(),
-            "mlm_loss": self.lm_loss,
-            "z_loss": self.z_loss,
-            "aux_loss": self.aux_loss,
+        return {
+            k: v for k, v in {
+                "accuracy": self.accuracy(),
+                "perplexity": self.perplexity(),
+                "mlm_loss": self.lm_loss,
+                "z_loss": self.z_loss,
+                "aux_loss": self.aux_loss,
+            }.items() if v is not None
         }
-        result = {
-            key: value for key, value in result.items() if value is not None
-        }  # drop None values
-        return result
 
     def perplexity(self):
         logits_flat = self.logits.view(-1, self.logits.size(-1))
@@ -136,12 +134,10 @@ class ComputeMetricsForSequenceClassification(ComputeMetricsBase):
             self.logits = self.logits[0]  # logits is the first element of the tuple
 
         # compute probabilities and predictions
-        self.probabilities = (
-            torch.softmax(torch.from_numpy(self.logits), dim=1).detach().numpy()[:, -1]
-        )
-        self.predictions = np.argmax(self.logits, axis=1)
+        self.predictions = torch.argmax(self.logits, dim=-1)
+        self.probabilities = torch.softmax(self.logits, dim=-1).detach().cpu().numpy()
 
-        # build outputs
+        # compute metrics
         return {
             "accuracy": self.accuracy(),
             "precision": self.precision(),

@@ -3,6 +3,7 @@ from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
 )
+from balm import *  # needed to load custom balm models & tokenizer
 
 __all__ = ["load_model_and_tokenizer"]
 

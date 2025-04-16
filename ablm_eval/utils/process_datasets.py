@@ -40,12 +40,11 @@ def load_and_tokenize(
     max_len: int = 256,
     truncate: bool = True,
     num_proc: int = 128,
-    cache_dir: str = "~/.cache/huggingface/datasets",
 ):
 
     # load
     dataset = load_dataset(
-        file_type, data_files=data_files, num_proc=num_proc, cache_dir=cache_dir
+        file_type, data_files=data_files, num_proc=num_proc,
     )
 
     # get the first available split name
