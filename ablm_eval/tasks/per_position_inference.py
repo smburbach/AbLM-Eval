@@ -66,7 +66,7 @@ def run_per_pos(args: argparse.Namespace):
 
     # load & process datatset
     tokenized_dataset = load_and_tokenize(
-        data_path=args.data_path,
+        data_path=args.per_pos_data,
         tokenizer=tokenizer,
         heavy_column="sequence_aa_heavy",
         light_column="sequence_aa_light",

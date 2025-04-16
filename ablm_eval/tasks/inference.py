@@ -19,7 +19,7 @@ def run_inference(args: argparse.Namespace):
 
     # load & process datatset
     tokenized_dataset = load_and_tokenize(
-        data_path=args.data_path,
+        data_path=args.inference_data,
         tokenizer=tokenizer,
         heavy_column="sequence_aa_heavy",
         light_column="sequence_aa_light",
