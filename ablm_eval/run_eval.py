@@ -24,7 +24,6 @@ def parser():
     )
     parser.add_argument(
         "--data_path",
-        default="/home/jovyan/shared/Sarah/current/mixed-data_fx/data/large-scale/TTE/annotated/paired-sep-test-annotated_20241119.parquet",
         type=str,
     )
     parser.add_argument(
