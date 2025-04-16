@@ -9,8 +9,8 @@ from transformers import TrainingArguments, Trainer, DataCollatorForLanguageMode
 from ..utils import (
     load_model_and_tokenizer,
     load_and_tokenize,
-    ComputeMetricsForMaskedLM,
 )
+from ..config import PerPositionConfig
 
 __all__ = ["run_per_pos"]
 
@@ -58,22 +58,17 @@ def _inference_batched(model, tokenizer, seq, input_ids):
         "sequence": seq
     }
 
-def run_per_pos(args: argparse.Namespace):
+def run_per_pos(config: PerPositionConfig):
 
     # load model & tokenizer
-    model, tokenizer = load_model_and_tokenizer(args.model_path, task="mlm")
+    model, tokenizer = load_model_and_tokenizer(config.model_path, task="mlm")
     model = model.to(device)
 
     # load & process datatset
     tokenized_dataset = load_and_tokenize(
-        data_path=args.per_pos_data,
+        data_path=config.per_pos_data,
         tokenizer=tokenizer,
-        heavy_column="sequence_aa_heavy",
-        light_column="sequence_aa_light",
-        padding=False,
-        truncate=False,
-        add_special_tokens=False,
-        return_sequence=True
+        config=config
     )
 
     # inference
@@ -88,4 +83,4 @@ def run_per_pos(args: argparse.Namespace):
         results.append(result)
 
     df = pl.DataFrame(results)
-    df.write_parquet(f"{args.output_dir}/{args.model_name}/per-pos-inference.parquet")
+    df.write_parquet(f"{config.output_dir}/{config.model_name}/per-pos-inference.parquet")
