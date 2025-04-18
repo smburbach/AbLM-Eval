@@ -18,11 +18,11 @@ __all__ = ["run_eval"]
 
 
 CONFIG_STR_MAPPING = {
-    InferenceConfig: "inference",
-    PerPositionConfig: "per-position-inference",
-    ClassificationConfig: "classification",
-    MutationPredConfig: "mutation-analysis",
-    RoutingConfig: "routing-analysis",
+    InferenceConfig: "Inference",
+    PerPositionConfig: "Per-position Inference",
+    ClassificationConfig: "Classification",
+    MutationPredConfig: "Mutation Analysis",
+    RoutingConfig: "Routing Analysis",
 }
 
 CONFIG_TASK_MAPPING = {
@@ -33,10 +33,12 @@ CONFIG_TASK_MAPPING = {
     RoutingConfig: run_routing_analysis,
 }
 
+UNDERLINE = "\033[4m"
+RESET = "\033[0m"
 
 def run_eval(configs: list):
 
-    for config in configs:
+    for itr, config in enumerate(configs, 1):
         # create output dir
         create_dir(config)
 
@@ -51,5 +53,5 @@ def run_eval(configs: list):
             )
 
         # run
-        print(f"Running {task_str}")
+        print(f"\n{UNDERLINE}Running Task {itr}: {task_str}{RESET}")
         task_fn(config)
