@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Union
 
 __all__ = [
@@ -28,7 +28,7 @@ class InferenceConfig:
     truncate: bool = True
     add_special_tokens: bool = True
     num_proc: int = 128
-    return_sequence: bool = False
+    keep_columns: list = field(default_factory=list)
 
     # collator
     mlm: bool = True
@@ -61,7 +61,7 @@ class PerPositionConfig:
     truncate: bool = False
     add_special_tokens: bool = False
     num_proc: int = 128
-    return_sequence: bool = True
+    keep_columns: list = field(default_factory=lambda: ["sequence"])
 
     # output
     output_dir: str = "./results"
@@ -73,7 +73,7 @@ class ClassificationConfig:
     model_name: str
     model_path: str
     dataset_dir: str
-    file_prefix: str # ie. 'hd-0_cov-1' for the file 'hd-0_cov-1_train{i}.csv'
+    file_prefix: str  # ie. 'hd-0_cov-1' for the file 'hd-0_cov-1_train{i}.csv'
     classification_name: str
 
     # data processing
@@ -95,7 +95,7 @@ class ClassificationConfig:
     truncate: bool = True
     add_special_tokens: bool = True
     num_proc: int = 128
-    return_sequence: bool = False
+    keep_columns: list = field(default_factory=lambda: ["label"])
 
     # wandb
     report_to: str = "wandb"
@@ -119,7 +119,7 @@ class ClassificationConfig:
     eval_accumulation_steps: int = 50
     logging_steps: int = 50
     save_strategy: str = "no"
-    logging_first_step: bool = True,
+    logging_first_step: bool = (True,)
 
     # output
     output_dir: str = "./results"
@@ -142,6 +142,25 @@ class RoutingConfig:
     model_name: str
     model_path: str
     routing_data: str
+
+    # data processing
+    heavy_column: Optional[str] = None
+    light_column: Optional[str] = None
+    heavy_cdr_column: Optional[str] = "cdr_mask_heavy"
+    light_cdr_column: Optional[str] = "cdr_mask_light"
+    id_column: Optional[str] = "sequence_id"
+    keep_columns: list = field(
+        default_factory=list
+    )  # id, sequence, heavy_cdr, and light_cdr columns will be appended
+    separator: str = "<cls>"
+
+    # tokenization
+    padding: Union[bool, str] = "max_length"
+    max_len: int = 256
+    truncate: bool = True
+    add_special_tokens: bool = True
+    num_proc: int = 128
+    return_sequence: bool = False
 
     # output
     output_dir: str = "./results"

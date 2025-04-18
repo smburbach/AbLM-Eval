@@ -68,9 +68,7 @@ def load_and_tokenize(
 
     # determine columns to drop
     # never drop label column
-    drop_cols = [col for col in columns if col != "label"]
-    if config.return_sequence:
-        drop_cols.remove("sequence")
+    drop_cols = [col for col in columns if col not in config.keep_columns]
 
     # tokenize
     tokenized_dataset = dataset.map(

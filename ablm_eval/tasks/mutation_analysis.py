@@ -1,4 +1,4 @@
-from ..configs import RoutingConfig
+from ..configs import MutationPredConfig
 
-def run_routing_analysis(config: RoutingConfig):
+def run_mutation_analysis(config: MutationPredConfig):
     pass
