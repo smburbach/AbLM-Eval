@@ -1,4 +1,11 @@
-[tool.poetry]
+[project]
 name = "ablm-eval"
 version = "0.0.0"
-authors = "Sarah Burbach"
+authors = [{name = "Sarah Burbach"}]
+
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["ablm_eval*"]
