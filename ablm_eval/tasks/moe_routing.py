@@ -162,10 +162,10 @@ def _load_reference_data(path: str, keep_columns: list) -> pd.DataFrame:
         raise ValueError(f"Unsupported file extension: {ext}")
 
 
-def run_routing_analysis(config: RoutingConfig):
+def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig):
 
     # load model & tokenizer
-    model, tokenizer = load_model_and_tokenizer(config.model_path, task="mlm")
+    model, tokenizer = load_model_and_tokenizer(model_path, task="mlm")
     model = model.to(device)
 
     # update keep_columns
@@ -191,8 +191,9 @@ def run_routing_analysis(config: RoutingConfig):
     extracted, length_reference = _process_outputs(ref, config)
 
     # save results
-    output_dir = os.path.join(config.output_dir, config.model_name)
-    extracted.to_parquet(f"{output_dir}/routing_results.parquet")
-    length_reference.to_parquet(f"{output_dir}/routing_length-reference.parquet")
+    extracted.to_parquet(f"{config.output_dir}/results/{model_name}_routing_results.parquet")
+    length_reference.to_parquet(
+        f"{config.output_dir}/results/{model_name}_routing_length-reference.parquet"
+    )
 
     # TODO: plot results

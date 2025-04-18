@@ -42,7 +42,7 @@ def _def_training_args(run_name, config: ClassificationConfig):
     return training_args
 
 
-def run_classification(config: ClassificationConfig):
+def run_classification(model_name: str, model_path: str, config: ClassificationConfig):
 
     # wandb
     if config.report_to == "wandb":
@@ -59,13 +59,13 @@ def run_classification(config: ClassificationConfig):
 
         # run name
         if config.run_name is None:
-            run_name = f"{config.model_name}_{config.classification_name}_itr{i}_{date.today().isoformat()}"
+            run_name = f"{model_name}_{config.classification_name}_itr{i}_{date.today().isoformat()}"
         else:
             run_name = f"{config.run_name}_itr{i}_{date.today().isoformat()}"
 
         # load model & tokenizer
         model, tokenizer = load_model_and_tokenizer(
-            config.model_path,
+            model_path,
             task="classification",
             num_labels=config.num_classes,
             attention_classifier=config.attention_classifier,
@@ -102,11 +102,11 @@ def run_classification(config: ClassificationConfig):
         # final eval
         _, _, metrics = trainer.predict(tokenized_dataset["test"])
 
-        metrics["model"] = config.model_name
+        metrics["model"] = model_name
         metrics["itr"] = i
         results.append(metrics)
 
     results_df = pd.DataFrame(results)
     results_df.to_csv(
-        f"{config.output_dir}/{config.model_name}/classification.csv", index=False
+        f"{config.output_dir}/results/{model_name}_classification.csv", index=False
     )

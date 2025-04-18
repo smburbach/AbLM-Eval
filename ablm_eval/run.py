@@ -1,57 +1,35 @@
-from .configs import (
-    InferenceConfig,
-    PerPositionConfig,
-    ClassificationConfig,
-    MutationPredConfig,
-    RoutingConfig,
-)
-from .tasks import (
-    run_inference,
-    run_per_pos,
-    run_classification,
-    run_mutation_analysis,
-    run_routing_analysis,
-)
-from .utils import create_dir
+from .utils import single_model_dir, multiple_models_dir
 
-__all__ = ["run_eval"]
+__all__ = ["eval_and_compare", "eval_model"]
 
-
-CONFIG_STR_MAPPING = {
-    InferenceConfig: "Inference",
-    PerPositionConfig: "Per-position Inference",
-    ClassificationConfig: "Classification",
-    MutationPredConfig: "Mutation Analysis",
-    RoutingConfig: "Routing Analysis",
-}
-
-CONFIG_TASK_MAPPING = {
-    InferenceConfig: run_inference,
-    PerPositionConfig: run_per_pos,
-    ClassificationConfig: run_classification,
-    MutationPredConfig: run_mutation_analysis,
-    RoutingConfig: run_routing_analysis,
-}
-
+BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
 RESET = "\033[0m"
 
-def run_eval(configs: list):
 
+def eval_model(model_name: str, model_path: str, configs: list, shared_output_dir):
     for itr, config in enumerate(configs, 1):
-        # create output dir
-        create_dir(config)
-
-        # get task str
-        task_str = CONFIG_STR_MAPPING.get(type(config))
+        if config.output_dir is None:  # only 1 model
+            config.output_dir = shared_output_dir
 
         # get task function
-        task_fn = CONFIG_TASK_MAPPING.get(type(config))
-        if task_str is None or task_fn is None:
-            raise ValueError(
-                f"Cannot map the config type ('{type(config)}') to an eval function."
-            )
+        task_fn = config.runner
 
         # run
-        print(f"\n{UNDERLINE}Running Task {itr}: {task_str}{RESET}")
-        task_fn(config)
+        print(f"\n{UNDERLINE}Running Task #{itr}: {config.name}{RESET}")
+        task_fn(model_name, model_path, config)
+
+
+def eval_and_compare(models: dict, configs: list, shared_output_dir: str = "./results"):
+
+    # create output directory
+    if len(models) == 1:  # all
+        single_model_dir(shared_output_dir)
+    else:
+        multiple_models_dir(shared_output_dir, configs)
+
+    for model_name, model_path in models:
+        print(f"\n{BOLD}Evaluating Model: {model_name}{RESET}")
+        eval_model(model_name, model_path, configs, shared_output_dir)
+
+    # TODO: plots / tables comparing models

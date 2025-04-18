@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional, Union
 
+
 __all__ = [
     "InferenceConfig",
     "PerPositionConfig",
@@ -10,11 +11,26 @@ __all__ = [
 ]
 
 
+def _name_from_task_dir(task_dir: str) -> str:
+    return task_dir.replace("_", " ").title()
+
+
 @dataclass
 class InferenceConfig:
+    @property
+    def task_dir(self):
+        return "inference"
+
+    @property
+    def name(self):
+        return _name_from_task_dir(self.task_dir)
+
+    @property
+    def runner(self):
+        from ..tasks import run_inference
+        return run_inference
+
     # required
-    model_name: str
-    model_path: str
     inference_data: str
 
     # data processing
@@ -40,14 +56,25 @@ class InferenceConfig:
     report_to: str = "none"
 
     # output
-    output_dir: str = "./results"
+    output_dir: str = None
 
 
 @dataclass
 class PerPositionConfig:
+    @property
+    def task_dir(self):
+        return "per_pos_inference"
+
+    @property
+    def name(self):
+        return _name_from_task_dir(self.task_dir)
+
+    @property
+    def runner(self):
+        from ..tasks import run_per_pos
+        return run_per_pos
+
     # required
-    model_name: str
-    model_path: str
     per_pos_data: str
 
     # data processing
@@ -64,14 +91,25 @@ class PerPositionConfig:
     keep_columns: list = field(default_factory=lambda: ["sequence"])
 
     # output
-    output_dir: str = "./results"
+    output_dir: str = None
 
 
 @dataclass
 class ClassificationConfig:
+    @property
+    def task_dir(self):
+        return "classification"
+
+    @property
+    def name(self):
+        return _name_from_task_dir(self.task_dir)
+
+    @property
+    def runner(self):
+        from ..tasks import run_classification
+        return run_classification
+
     # required
-    model_name: str
-    model_path: str
     dataset_dir: str
     file_prefix: str  # ie. 'hd-0_cov-1' for the file 'hd-0_cov-1_train{i}.csv'
     classification_name: str
@@ -122,25 +160,47 @@ class ClassificationConfig:
     logging_first_step: bool = (True,)
 
     # output
-    output_dir: str = "./results"
+    output_dir: str = None
 
 
 @dataclass
 class MutationPredConfig:
+    @property
+    def task_dir(self):
+        return "mutation_prediction"
+
+    @property
+    def name(self):
+        return _name_from_task_dir(self.task_dir)
+
+    @property
+    def runner(self):
+        from ..tasks import run_mutation_analysis
+        return run_mutation_analysis
+
     # required
-    model_name: str
-    model_path: str
     mutation_data: str
 
     # output
-    output_dir: str = "./results"
+    output_dir: str = None
 
 
 @dataclass
 class RoutingConfig:
+    @property
+    def task_dir(self):
+        return "routing_analysis"
+
+    @property
+    def name(self):
+        return _name_from_task_dir(self.task_dir)
+
+    @property
+    def runner(self):
+        from ..tasks import run_routing_analysis
+        return run_routing_analysis
+
     # required
-    model_name: str
-    model_path: str
     routing_data: str
 
     # data processing
@@ -163,4 +223,4 @@ class RoutingConfig:
     return_sequence: bool = False
 
     # output
-    output_dir: str = "./results"
+    output_dir: str = None

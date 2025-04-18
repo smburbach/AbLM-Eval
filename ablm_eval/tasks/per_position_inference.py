@@ -60,10 +60,10 @@ def _inference_batched(model, tokenizer, seq, input_ids):
     }
 
 
-def run_per_pos(config: PerPositionConfig):
+def run_per_pos(model_name: str, model_path: str, config: PerPositionConfig):
 
     # load model & tokenizer
-    model, tokenizer = load_model_and_tokenizer(config.model_path, task="mlm")
+    model, tokenizer = load_model_and_tokenizer(model_path, task="mlm")
     model = model.to(device)
 
     # load & process datatset
@@ -84,8 +84,4 @@ def run_per_pos(config: PerPositionConfig):
 
     # save results
     df = pl.DataFrame(results)
-    df.write_parquet(
-        f"{config.output_dir}/{config.model_name}/per-pos-inference.parquet"
-    )
-
-    # TODO: plot results
+    df.write_parquet(f"{config.output_dir}/results/{model_name}_per-pos-inference.parquet")

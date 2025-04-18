@@ -13,10 +13,10 @@ from ..configs import InferenceConfig
 __all__ = ["run_inference"]
 
 
-def run_inference(config: InferenceConfig):
+def run_inference(model_name: str, model_path: str, config: InferenceConfig):
 
     # load model & tokenizer
-    model, tokenizer = load_model_and_tokenizer(config.model_path, task="mlm")
+    model, tokenizer = load_model_and_tokenizer(model_path, task="mlm")
 
     # load & process dataset
     tokenized_dataset = load_and_tokenize(
@@ -46,11 +46,9 @@ def run_inference(config: InferenceConfig):
         ),
     )
     results = trainer.evaluate(tokenized_dataset)
-    results["model"] = config.model_name
-    results["model_path"] = config.model_path
+    results["model"] = model_name
+    results["model_path"] = model_path
 
     # save results
     results_df = pd.DataFrame([results])
-    results_df.to_csv(
-        f"{config.output_dir}/{config.model_name}/test-inference.csv", index=False
-    )
+    results_df.to_csv(f"{config.output_dir}/results/{model_name}_inference.csv", index=False)
