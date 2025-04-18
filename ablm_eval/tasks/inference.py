@@ -12,6 +12,7 @@ from ..configs import InferenceConfig
 
 __all__ = ["run_inference"]
 
+
 def run_inference(config: InferenceConfig):
 
     # load model & tokenizer
@@ -35,11 +36,13 @@ def run_inference(config: InferenceConfig):
     trainer = Trainer(
         model=model,
         data_collator=collator,
-        compute_metrics=ComputeMetricsForMaskedLM(return_moe_losses=config.return_moe_losses),
+        compute_metrics=ComputeMetricsForMaskedLM(
+            return_moe_losses=config.return_moe_losses
+        ),
         args=TrainingArguments(
-            output_dir=config.output_dir, 
-            report_to=config.report_to, 
-            per_device_eval_batch_size=config.batch_size
+            output_dir=config.output_dir,
+            report_to=config.report_to,
+            per_device_eval_batch_size=config.batch_size,
         ),
     )
     results = trainer.evaluate(tokenized_dataset)
@@ -48,4 +51,6 @@ def run_inference(config: InferenceConfig):
 
     # save results
     results_df = pd.DataFrame([results])
-    results_df.to_csv(f"{config.output_dir}/{config.model_name}/test-inference.csv", index=False)
+    results_df.to_csv(
+        f"{config.output_dir}/{config.model_name}/test-inference.csv", index=False
+    )

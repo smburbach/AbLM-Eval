@@ -14,7 +14,8 @@ from ..configs import PerPositionConfig
 
 __all__ = ["run_per_pos"]
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def _inference_batched(model, tokenizer, seq, input_ids):
     seq_len = input_ids.shape[0]
@@ -27,22 +28,22 @@ def _inference_batched(model, tokenizer, seq, input_ids):
     diagonal_idxs = torch.arange(seq_len)
     masked_inputs[diagonal_idxs, diagonal_idxs] = tokenizer.mask_token_id
     labels[diagonal_idxs, diagonal_idxs] = input_ids
-    
+
     # send to device
     masked_inputs = masked_inputs.to(device)
     labels = labels.to(device)
 
     # inference
     with torch.no_grad():
-        outputs = model(input_ids=masked_inputs,labels=labels)
+        outputs = model(input_ids=masked_inputs, labels=labels)
         logits, loss = outputs.logits, outputs.loss
 
         # calculate loss and perplexity
         ce_loss = F.cross_entropy(
-            logits.view(-1, logits.size(-1)), 
-            labels.view(-1), 
-            ignore_index=-100, 
-            reduction='none'
+            logits.view(-1, logits.size(-1)),
+            labels.view(-1),
+            ignore_index=-100,
+            reduction="none",
         )
         ce_loss = ce_loss.view(seq_len, -1).sum(dim=1)
         ppl = torch.exp(ce_loss)
@@ -52,11 +53,12 @@ def _inference_batched(model, tokenizer, seq, input_ids):
         pred_strings = [tokenizer.decode([t]) for t in pred_tokens]
 
     return {
-        'loss': ce_loss.tolist(),
+        "loss": ce_loss.tolist(),
         "perplexity": ppl.tolist(),
         "prediction": pred_strings,
-        "sequence": seq
+        "sequence": seq,
     }
+
 
 def run_per_pos(config: PerPositionConfig):
 
@@ -66,24 +68,24 @@ def run_per_pos(config: PerPositionConfig):
 
     # load & process datatset
     tokenized_dataset = load_and_tokenize(
-        data_path=config.per_pos_data,
-        tokenizer=tokenizer,
-        config=config
+        data_path=config.per_pos_data, tokenizer=tokenizer, config=config
     )
 
     # inference
     results = []
-    for example in tqdm(tokenized_dataset):
+    for example in tqdm(tokenized_dataset, desc="Running inference"):
         result = _inference_batched(
-            model, 
-            tokenizer, 
-            example['sequence'], 
-            torch.tensor(example['input_ids']),
+            model,
+            tokenizer,
+            example["sequence"],
+            torch.tensor(example["input_ids"]),
         )
         results.append(result)
 
     # save results
     df = pl.DataFrame(results)
-    df.write_parquet(f"{config.output_dir}/{config.model_name}/per-pos-inference.parquet")
+    df.write_parquet(
+        f"{config.output_dir}/{config.model_name}/per-pos-inference.parquet"
+    )
 
     # TODO: plot results
