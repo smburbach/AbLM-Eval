@@ -10,7 +10,7 @@ from ..utils import (
     load_model_and_tokenizer,
     load_and_tokenize,
 )
-from ..config import PerPositionConfig
+from ..configs import PerPositionConfig
 
 __all__ = ["run_per_pos"]
 
@@ -82,5 +82,8 @@ def run_per_pos(config: PerPositionConfig):
         )
         results.append(result)
 
+    # save results
     df = pl.DataFrame(results)
     df.write_parquet(f"{config.output_dir}/{config.model_name}/per-pos-inference.parquet")
+
+    # TODO: plot results
