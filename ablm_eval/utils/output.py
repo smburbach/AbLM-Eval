@@ -3,35 +3,50 @@ import pathlib
 __all__ = ["single_model_dir", "multiple_models_dir"]
 
 
+def _check_dir(path: pathlib.Path):
+    """
+    Raise exception if the given directory or any of its subdirectories contain files.
+    """
+    if path.exists() and any(p.is_file() for p in path.rglob("*")):
+        raise Exception(f"The directory '{path}' exists and is not empty!")
+
+
 def _results_dirs(base_dir: pathlib.Path):
-    # results
-    results_path = base_dir / "results"
-    results_path.mkdir()
-    # plots
-    plots_path = base_dir / "plots"
-    plots_path.mkdir()
+    """
+    Create results and plots directories.
+    """
+    for subdir in ["results", "plots"]:
+        subdir_path = base_dir / subdir
+        subdir_path.mkdir(exist_ok=True)
 
 
-def _create_base_dir(base_dir: pathlib.Path):
-    # check if directory exists and is not empty
-    if base_dir.exists() and any(base_dir.iterdir()):
-        raise Exception(f"The directory '{base_dir}' already exists and is not empty!")
-
-    # create directory
-    base_dir.mkdir(exist_ok=True)
-
-
-def single_model_dir(output_dir: str):
+def single_model_dir(output_dir: str, ignore_existing: bool):
+    """
+    Create directory structure for a single model.
+    """
     output_path = pathlib.Path(output_dir)
-    _create_base_dir(output_path)
+    if not ignore_existing:
+        _check_dir(output_path)
+
+    # create dirs
+    output_path.mkdir(exist_ok=True)
     _results_dirs(output_path)
 
 
-def multiple_models_dir(output_dir: str, configs: list):
+def multiple_models_dir(output_dir: str, configs: list, ignore_existing: bool):
+    """
+    Create directory structure for multiple models.
+    """
     output_path = pathlib.Path(output_dir)
-    _create_base_dir(output_path)
+    output_path.mkdir(exist_ok=True)
     for config in configs:
-        task_path = output_path / config.task_dir
-        task_path.mkdir()
-        _results_dirs(task_path)
+        task_path = output_path / f"{config.classification_name}_{config.task_dir}"
         config.output_dir = task_path
+
+        # task dir
+        if not ignore_existing:
+            _check_dir(task_path)
+        task_path.mkdir(exist_ok=True)
+
+        # results dirs inside task dir
+        _results_dirs(task_path)
