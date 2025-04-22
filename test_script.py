@@ -11,10 +11,10 @@ from ablm_eval import (
 def main():
     # models
     models = {
-        ("test_model_20k", "/home/jovyan/shared/Sarah/current/BALM-MoE/checkpoints/BALM-MoE_160M_50k-stp_1shared-top1-0.25capacity-8experts-altsparsity_lr1e-4_bs32-4xGPUs_2025-04-18/checkpoint-20000/"),
-        ("test_model_50k", "/home/jovyan/shared/Sarah/current/BALM-MoE/checkpoints/BALM-MoE_160M_50k-stp_1shared-top1-0.25capacity-8experts-altsparsity_lr1e-4_bs32-4xGPUs_2025-04-18/checkpoint-50000/"),
+        ("ec_test", "/home/jovyan/shared/Sarah/current/BALM-MoE/moe-optimization/num_experts/models/BALM-MoE_45M-act_expertchoice_capacity1.0_4experts_lr1e-4_bs32-4xGPUs_swiglu_2025-04-21/"),
+        ("ec_test_2", "/home/jovyan/shared/Sarah/current/BALM-MoE/moe-optimization/num_experts/models/BALM-MoE_45M-act_expertchoice_capacity1.0_4experts_lr1e-4_bs32-4xGPUs_swiglu_2025-04-21/"),
     }
-    shared_output_dir = "./topk_results"
+    shared_output_dir = "./results"
 
     # define configs
     dir = "/home/jovyan/shared/Sarah/current/mixed-data_fx/data/large-scale/TTE/annotated/"
@@ -28,24 +28,25 @@ def main():
         # PerPositionConfig(
         #     per_pos_data=f"{dir}paired-sep-1k-annotated.csv",
         # ),
-        # ClassificationConfig(
-        #     dataset_dir="/home/jovyan/shared/Sarah/current/curr-pMLM/eval/specificity-classification/data/TTE-5_HFC/",
-        #     file_prefix="hd-0_flu-1_cov-2",
-        #     classification_name="HD-Flu-CoV",
-        #     heavy_column="h_sequence",
-        #     light_column="l_sequence",
-        #     num_folds=1,
-        #     num_classes=3,
-        #     epochs=1,
-        #     eval_steps=10,
-        #     report_to="none",
-        # ),
-        RoutingConfig(
-            routing_data=f"{dir}paired-sep-1k-annotated.csv",
-        )
+        ClassificationConfig(
+            dataset_dir="/home/jovyan/shared/Sarah/current/curr-pMLM/eval/specificity-classification/data/TTE-5_HC/",
+            file_prefix="hd-0_cov-1",
+            classification_name="HD-CoV",
+            heavy_column="h_sequence",
+            light_column="l_sequence",
+            num_folds=5,
+            num_gpus_per_fold=1,
+            num_classes=2,
+            epochs=1,
+            eval_steps=300,
+            report_to="none",
+        ),
+        # RoutingConfig(
+        #     routing_data=f"{dir}paired-sep-1k-annotated.csv",
+        # )
     ]
 
-    eval_and_compare(models, configs, shared_output_dir)
+    eval_and_compare(models, configs, shared_output_dir, ignore_existing_files=True)
 
 
 if __name__ == "__main__":
