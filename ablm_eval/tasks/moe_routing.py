@@ -91,33 +91,28 @@ def _process_outputs(test_data, config: RoutingConfig):
 
         # extract data
         for layer, expert_idxs in enumerate(row.balmmoe_output["expert_indexes"]):
-            selected = set(
-                pos.item()
-                for idxs in expert_idxs
-                for pos in idxs[idxs != -1]  # -1 indicates unused slots in expert
-            )
+            expert_to_positions = {
+                eid: set(idxs[idxs != -1].tolist())
+                for eid, idxs in enumerate(expert_idxs)
+            }
+
+            position_to_experts = {}
+            for eid, positions in expert_to_positions.items():
+                for pos in positions:
+                    position_to_experts.setdefault(pos, []).append(eid)
+
             for pos in range(config.max_len):
-                expert_id = (
-                    pd.NA
-                    if pos not in selected
-                    else next(
-                        (
-                            eid
-                            for eid, idxs in enumerate(expert_idxs)
-                            if pos in idxs[idxs != -1]
-                        ),
-                        pd.NA,
+                experts = position_to_experts.get(pos, [pd.NA])  # NA if token is not sent to any expert
+                for expert_id in experts:
+                    data.append(
+                        {
+                            "sequence_id": sequence_id,
+                            "layer": layer,
+                            "expert_id": expert_id,
+                            "token_position": pos,
+                            "region": region_map.get(pos, "Unknown"),
+                        }
                     )
-                )
-                data.append(
-                    {
-                        "sequence_id": sequence_id,
-                        "layer": layer,
-                        "expert_id": expert_id,
-                        "token_position": pos,
-                        "region": region_map.get(pos, "Unknown"),
-                    }
-                )
 
     return pd.DataFrame(data), pd.DataFrame(lengths)
 
