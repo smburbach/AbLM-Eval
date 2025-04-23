@@ -7,6 +7,8 @@ import torch
 from ..utils import (
     load_model_and_tokenizer,
     load_and_tokenize,
+    move_to_cpu,
+    load_reference_data
 )
 from ..configs import RoutingConfig
 
@@ -133,28 +135,8 @@ def _inference(model, tokenized_dataset) -> list:
                 output_router_logits=True,
                 output_expert_indexes=True,
             )
-            outputs.append(_move_to_cpu(output))
+            outputs.append(move_to_cpu(output))
     return outputs
-
-
-def _move_to_cpu(obj):
-    if torch.is_tensor(obj):
-        return obj.cpu()
-    elif isinstance(obj, dict):
-        return {k: _move_to_cpu(v) for k, v in obj.items()}
-    elif isinstance(obj, (list, tuple)):
-        return type(obj)(_move_to_cpu(v) for v in obj)
-    return obj
-
-
-def _load_reference_data(path: str, keep_columns: list) -> pd.DataFrame:
-    ext = os.path.splitext(path)[1].lower()
-    if ext == ".parquet":
-        return pd.read_parquet(path)[keep_columns]
-    elif ext == ".csv":
-        return pd.read_csv(path)[keep_columns]
-    else:
-        raise ValueError(f"Unsupported file extension: {ext}")
 
 
 def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig):
@@ -179,7 +161,7 @@ def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig
     outputs = _inference(model, tokenized_dataset)
 
     # append outputs to original dataset
-    ref = _load_reference_data(config.routing_data, keep_columns=config.keep_columns)
+    ref = load_reference_data(config.routing_data, keep_columns=config.keep_columns)
     ref["balmmoe_output"] = outputs
 
     # process outputs

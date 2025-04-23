@@ -30,6 +30,11 @@ class InferenceConfig:
         from ..tasks import run_inference
         return run_inference
 
+    @property
+    def comparer(self):
+        from ..plots import table_compare
+        return table_compare
+
     # required
     inference_data: str
 
@@ -74,6 +79,11 @@ class PerPositionConfig:
         from ..tasks import run_per_pos
         return run_per_pos
 
+    @property
+    def comparer(self):
+        from ..plots import per_pos_compare
+        return per_pos_compare
+
     # required
     per_pos_data: str
 
@@ -88,7 +98,7 @@ class PerPositionConfig:
     truncate: bool = False
     add_special_tokens: bool = False
     num_proc: int = 128
-    keep_columns: list = field(default_factory=lambda: ["sequence"])
+    keep_columns: list = field(default_factory=lambda: ["sequence_id", "sequence"])
 
     # output
     output_dir: str = None
@@ -108,6 +118,11 @@ class ClassificationConfig:
     def runner(self):
         from ..tasks import run_classification
         return run_classification
+
+    @property
+    def comparer(self):
+        from ..plots import table_compare
+        return table_compare
 
     # required
     dataset_dir: str
@@ -179,6 +194,10 @@ class MutationPredConfig:
         from ..tasks import run_mutation_analysis
         return run_mutation_analysis
 
+    @property
+    def comparer(self):
+        pass
+
     # required
     mutation_data: str
 
@@ -200,6 +219,10 @@ class RoutingConfig:
     def runner(self):
         from ..tasks import run_routing_analysis
         return run_routing_analysis
+
+    @property
+    def comparer(self):
+        pass
 
     # required
     routing_data: str

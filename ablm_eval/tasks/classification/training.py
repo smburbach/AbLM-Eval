@@ -99,6 +99,7 @@ def main(
     # final eval
     _, _, metrics = trainer.predict(tokenized_dataset["test"])
     metrics["model"] = model_name
+    metrics["model_path"] = model_path
     metrics["itr"] = fold_itr
 
     # save

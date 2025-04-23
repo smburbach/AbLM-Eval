@@ -45,12 +45,16 @@ def _override_accelerate_config(task_name: str, task_dir: str):
 
 def eval_model(model_name: str, model_path: str, configs: list):
     for itr, config in enumerate(configs, 1):
-        # get task function
-        task_fn = config.runner
-
-        # run
         print(f"\n{UNDERLINE}Running Task #{itr}: {config.name}{RESET}")
+        task_fn = config.runner
         task_fn(model_name, model_path, config)
+
+
+def compare_models(configs: list, models: dict):
+    print(f"\nGenerating model comparisons...")
+    for config in configs:
+        compare_fn = config.comparer
+        compare_fn(config, models)
 
 
 def eval_and_compare(
@@ -68,7 +72,9 @@ def eval_and_compare(
 
     for config in configs:
         config.output_dir = (
-            str(config.output_dir) if config.output_dir is not None else str(shared_output_dir)
+            str(config.output_dir)
+            if config.output_dir is not None
+            else str(shared_output_dir)
         )
         if isinstance(config, ClassificationConfig):
             _override_accelerate_config(config.classification_name, config.output_dir)
@@ -77,4 +83,5 @@ def eval_and_compare(
         print(f"\n{BOLD}Evaluating Model: {model_name}{RESET}")
         eval_model(model_name, model_path, configs)
 
-    # TODO: plots / tables comparing models
+    if len(models) > 1:
+        compare_models(configs, models)
