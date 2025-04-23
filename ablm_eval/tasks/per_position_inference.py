@@ -1,6 +1,5 @@
-import argparse
-
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 import polars as pl
 from tqdm import tqdm
@@ -17,7 +16,7 @@ __all__ = ["run_per_pos"]
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def _inference_batched(model, tokenizer, seq, input_ids):
+def _inference_batched(model, tokenizer, seq_id, seq, input_ids):
     seq_len = input_ids.shape[0]
 
     # create a batch of inputs with one position masked at a time
@@ -36,7 +35,7 @@ def _inference_batched(model, tokenizer, seq, input_ids):
     # inference
     with torch.no_grad():
         outputs = model(input_ids=masked_inputs, labels=labels)
-        logits, loss = outputs.logits, outputs.loss
+        logits = outputs.logits
 
         # calculate loss and perplexity
         ce_loss = F.cross_entropy(
@@ -53,6 +52,7 @@ def _inference_batched(model, tokenizer, seq, input_ids):
         pred_strings = [tokenizer.decode([t]) for t in pred_tokens]
 
     return {
+        "sequence_id": seq_id,
         "loss": ce_loss.tolist(),
         "perplexity": ppl.tolist(),
         "prediction": pred_strings,
@@ -65,8 +65,11 @@ def run_per_pos(model_name: str, model_path: str, config: PerPositionConfig):
     # load model & tokenizer
     model, tokenizer = load_model_and_tokenizer(model_path, task="mlm")
     model = model.to(device)
+    if torch.cuda.device_count() > 1:
+        model = nn.DataParallel(model)
+    model.eval()
 
-    # load & process datatset
+    # load & process dataset
     tokenized_dataset = load_and_tokenize(
         data_path=config.per_pos_data, tokenizer=tokenizer, config=config
     )
@@ -77,8 +80,9 @@ def run_per_pos(model_name: str, model_path: str, config: PerPositionConfig):
         result = _inference_batched(
             model,
             tokenizer,
-            example["sequence"],
-            torch.tensor(example["input_ids"]),
+            seq_id=example["sequence_id"],
+            seq=example["sequence"],
+            input_ids=torch.tensor(example["input_ids"]),
         )
         results.append(result)
 
