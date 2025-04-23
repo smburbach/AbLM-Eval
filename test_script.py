@@ -19,15 +19,17 @@ def main():
     # define configs
     dir = "/home/jovyan/shared/Sarah/current/mixed-data_fx/data/large-scale/TTE/annotated/"
     configs = [
-        # InferenceConfig(
-        #     inference_data=f"{dir}paired-sep-test-annotated_20241119.parquet",
-        #     batch_size=128,
-        #     heavy_column="sequence_aa_heavy",
-        #     light_column="sequence_aa_light",
-        # ),
-        # PerPositionConfig(
-        #     per_pos_data=f"{dir}paired-sep-1k-annotated.csv",
-        # ),
+        InferenceConfig(
+            inference_data=f"{dir}paired-sep-test-annotated_20241119.parquet",
+            batch_size=128,
+            heavy_column="sequence_aa_heavy",
+            light_column="sequence_aa_light",
+        ),
+        PerPositionConfig(
+            per_pos_data=f"{dir}paired-sep-1k-annotated.csv",
+            heavy_column="sequence_aa_heavy",
+            light_column="sequence_aa_light",
+        ),
         ClassificationConfig(
             dataset_dir="/home/jovyan/shared/Sarah/current/curr-pMLM/eval/specificity-classification/data/TTE-5_HC/",
             file_prefix="hd-0_cov-1",
@@ -41,9 +43,9 @@ def main():
             eval_steps=300,
             report_to="none",
         ),
-        # RoutingConfig(
-        #     routing_data=f"{dir}paired-sep-1k-annotated.csv",
-        # )
+        RoutingConfig(
+            routing_data=f"{dir}paired-sep-1k-annotated.csv",
+        )
     ]
 
     eval_and_compare(models, configs, shared_output_dir, ignore_existing_files=True)
