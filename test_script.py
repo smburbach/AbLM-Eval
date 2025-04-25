@@ -4,7 +4,7 @@ from ablm_eval import (
     ClassificationConfig,
     MutationPredConfig,
     RoutingConfig,
-    eval_and_compare,
+    evaluate_ablms,
 )
 
 
@@ -47,7 +47,13 @@ def main():
         )
     ]
 
-    eval_and_compare(models, configs, shared_output_dir, ignore_existing_files=True)
+    evaluate_ablms(
+        models, 
+        configs, 
+        shared_output_dir, 
+        generate_comparisons=True,
+        ignore_existing_files=True,
+    )
 
 
 if __name__ == "__main__":

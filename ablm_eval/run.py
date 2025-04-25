@@ -1,49 +1,14 @@
-import yaml
-import subprocess
-from importlib.resources import files
-
 import gc
 import torch
 
 from .utils import create_results_dir
-from .configs import ClassificationConfig
-from .tasks import classification
 
-__all__ = ["eval_and_compare", "eval_model"]
+
+__all__ = ["evaluate_ablms", "compare_results"]
 
 BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
 RESET = "\033[0m"
-
-
-def _user_prompt(prompt: str) -> bool:
-    while True:
-        response = input(prompt + " (yes/no): ").strip().lower()
-        if response in ("yes", "no"):
-            return response == "yes"
-        print("Invalid response. Please enter 'yes' or 'no'.")
-
-
-def _override_accelerate_config(task_name: str, task_dir: str):
-    # get default
-    default_config_path = files(classification).joinpath(
-        "default_accelerate_config.yaml"
-    )
-    default_config = yaml.safe_load(default_config_path.read_text())
-
-    # print default
-    print("\nThe default accelerate config for classification is:")
-    print(yaml.dump(default_config, sort_keys=False, default_flow_style=False))
-
-    # prompt for custom config
-    config_path = f"{task_dir}/{task_name}_accelerate_config.yaml"
-    if _user_prompt(
-        f"Would you like to setup a different accelerate config for {task_name} classification?"
-    ):
-        subprocess.run(["accelerate", "config", "--config_file", config_path])
-    else:
-        with open(config_path, "w") as f:
-            yaml.dump(default_config, f, sort_keys=False)
 
 
 def _clean_up():
@@ -51,7 +16,12 @@ def _clean_up():
     torch.cuda.empty_cache()
 
 
-def eval_model(model_name: str, model_path: str, configs: list):
+def _eval_model(model_name: str, model_path: str, configs: list):
+    """
+    Evaluates single model based on task configs.
+    Should not be called by user directly, because it assumes the
+    output directories have been created.
+    """
     for itr, config in enumerate(configs, 1):
         print(f"{UNDERLINE}Running Task #{itr}: {config.name}{RESET}")
         task_fn = config.runner
@@ -59,7 +29,11 @@ def eval_model(model_name: str, model_path: str, configs: list):
         _clean_up()
 
 
-def compare_models(configs: list, models: dict):
+def compare_results(configs: list, models: dict):
+    """
+    Compare models the results in a given output directory.
+    This can be called by the user.
+    """
     for config in configs:
         compare_fn = config.comparer
         if compare_fn is None:
@@ -67,26 +41,23 @@ def compare_models(configs: list, models: dict):
         compare_fn(config, models=models)
 
 
-def eval_and_compare(
+def evaluate_ablms(
     models: dict,
     configs: list,
     shared_output_dir: str = "./results",
+    generate_comparisons: str = True,
     ignore_existing_files=False,
 ):
 
-    # create output directory
+    # create output dirs
     create_results_dir(shared_output_dir, configs, ignore_existing_files)
-
-    # accelerate config for classification tasks
-    for config in configs:
-        if isinstance(config, ClassificationConfig):
-            _override_accelerate_config(config.classification_name, config.output_dir)
 
     # eval
     for itr, (model_name, model_path) in enumerate(models, 1):
         print(f"\n{BOLD}Evaluating Model #{itr}: {model_name}{RESET}")
-        eval_model(model_name, model_path, configs)
+        _eval_model(model_name, model_path, configs)
 
     # plot comparisons
-    print(f"\n{BOLD}Generating model comparisons...{RESET}")
-    compare_models(configs, models)
+    if generate_comparisons:
+        print(f"\n{BOLD}Generating model comparisons...{RESET}")
+        compare_results(configs, models)

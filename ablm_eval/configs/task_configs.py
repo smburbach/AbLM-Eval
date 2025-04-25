@@ -108,7 +108,7 @@ class PerPositionConfig:
 class ClassificationConfig:
     @property
     def task_dir(self):
-        return "classification"
+        return f"{self.classification_name}_classification"
 
     @property
     def name(self):
