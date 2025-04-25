@@ -8,7 +8,7 @@ from ..utils import (
     load_model_and_tokenizer,
     load_and_tokenize,
     move_to_cpu,
-    load_reference_data
+    load_reference_data,
 )
 from ..configs import RoutingConfig
 
@@ -104,7 +104,9 @@ def _process_outputs(test_data, config: RoutingConfig):
                     position_to_experts.setdefault(pos, []).append(eid)
 
             for pos in range(config.max_len):
-                experts = position_to_experts.get(pos, [pd.NA])  # NA if token is not sent to any expert
+                experts = position_to_experts.get(
+                    pos, [pd.NA]
+                )  # NA if token is not sent to any expert
                 for expert_id in experts:
                     data.append(
                         {
@@ -168,7 +170,9 @@ def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig
     extracted, length_reference = _process_outputs(ref, config)
 
     # save results
-    extracted.to_parquet(f"{config.output_dir}/results/{model_name}_routing_results.parquet")
+    extracted.to_parquet(
+        f"{config.output_dir}/results/{model_name}_routing_results.parquet"
+    )
     length_reference.to_parquet(
         f"{config.output_dir}/results/{model_name}_routing_length-reference.parquet"
     )

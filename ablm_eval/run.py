@@ -45,9 +45,11 @@ def _override_accelerate_config(task_name: str, task_dir: str):
         with open(config_path, "w") as f:
             yaml.dump(default_config, f, sort_keys=False)
 
+
 def _clean_up():
     gc.collect()
     torch.cuda.empty_cache()
+
 
 def eval_model(model_name: str, model_path: str, configs: list):
     for itr, config in enumerate(configs, 1):

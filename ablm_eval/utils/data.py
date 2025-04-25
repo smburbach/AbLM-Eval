@@ -27,5 +27,5 @@ def load_reference_data(path: str, keep_columns: list = None) -> pd.DataFrame:
 
     if keep_columns is not None:
         df = df[keep_columns]
-    
+
     return df

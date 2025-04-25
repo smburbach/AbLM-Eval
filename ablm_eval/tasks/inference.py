@@ -51,4 +51,6 @@ def run_inference(model_name: str, model_path: str, config: InferenceConfig):
 
     # save results
     results_df = pd.DataFrame([results])
-    results_df.to_csv(f"{config.output_dir}/results/{model_name}_inference.csv", index=False)
+    results_df.to_csv(
+        f"{config.output_dir}/results/{model_name}_inference.csv", index=False
+    )

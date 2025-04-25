@@ -88,4 +88,6 @@ def run_per_pos(model_name: str, model_path: str, config: PerPositionConfig):
 
     # save results
     df = pl.DataFrame(results)
-    df.write_parquet(f"{config.output_dir}/results/{model_name}_per-pos-inference.parquet")
+    df.write_parquet(
+        f"{config.output_dir}/results/{model_name}_per-pos-inference.parquet"
+    )
