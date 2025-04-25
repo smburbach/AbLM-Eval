@@ -42,7 +42,7 @@ class ComputeMetricsBase:
                     _, z_loss, aux_loss, lm_loss = logits
                     self.aux_loss = aux_loss.mean()
                 # expert choice
-                elif len(self.logits) == 3:
+                elif len(logits) == 3:
                     _, z_loss, lm_loss = logits
 
                 self.lm_loss = lm_loss.mean()
