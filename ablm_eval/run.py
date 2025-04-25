@@ -2,6 +2,9 @@ import yaml
 import subprocess
 from importlib.resources import files
 
+import gc
+import torch
+
 from .utils import single_model_dir, multiple_models_dir
 from .configs import ClassificationConfig
 from .tasks import classification
@@ -42,19 +45,25 @@ def _override_accelerate_config(task_name: str, task_dir: str):
         with open(config_path, "w") as f:
             yaml.dump(default_config, f, sort_keys=False)
 
+def _clean_up():
+    gc.collect()
+    torch.cuda.empty_cache()
 
 def eval_model(model_name: str, model_path: str, configs: list):
     for itr, config in enumerate(configs, 1):
         print(f"\n{UNDERLINE}Running Task #{itr}: {config.name}{RESET}")
         task_fn = config.runner
         task_fn(model_name, model_path, config)
+        _clean_up()
 
 
 def compare_models(configs: list, models: dict):
     print(f"\nGenerating model comparisons...")
     for config in configs:
         compare_fn = config.comparer
-        compare_fn(config, models)
+        if compare_fn is None:
+            continue
+        compare_fn(config, models=models)
 
 
 def eval_and_compare(
