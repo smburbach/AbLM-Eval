@@ -136,7 +136,6 @@ class ClassificationConfig:
 
     # classification details
     num_folds: int = 5
-    num_gpus_per_fold: int = 1
     num_classes: int = 2
     multi_class_average: str = "macro"  # only used in num_classes > 2
     positive_label: int = 1

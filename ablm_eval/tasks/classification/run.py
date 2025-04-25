@@ -1,5 +1,6 @@
 import os
 import json
+import yaml
 import subprocess
 import tempfile
 from pathlib import Path
@@ -46,10 +47,12 @@ def run_classification(model_name: str, model_path: str, config: ClassificationC
     config_path = (
         f"{config.output_dir}/{config.classification_name}_accelerate_config.yaml"
     )
+    with open(config_path, "r") as f:
+        accelerate_config = yaml.safe_load(f)
 
     # Determine the number of available GPUs
     total_gpus = torch.cuda.device_count()
-    gpus_per_run = config.num_gpus_per_fold
+    gpus_per_run = accelerate_config.get("num_processes")
     max_parallel_runs = total_gpus // gpus_per_run
 
     # Launch each GPU for its specific fold range

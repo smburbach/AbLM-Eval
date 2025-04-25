@@ -37,7 +37,6 @@ def main():
             heavy_column="h_sequence",
             light_column="l_sequence",
             num_folds=5,
-            num_gpus_per_fold=1,
             num_classes=2,
             epochs=1,
             eval_steps=300,
