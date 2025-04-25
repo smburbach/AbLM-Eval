@@ -5,6 +5,7 @@ from ablm_eval import (
     MutationPredConfig,
     RoutingConfig,
     evaluate_ablms,
+    compare_results
 )
 
 

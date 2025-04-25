@@ -1,7 +1,9 @@
 import yaml
+import json
 import pathlib
 import subprocess
 from importlib.resources import files
+from dataclasses import asdict
 
 from ..configs import ClassificationConfig
 from ..tasks import classification
@@ -69,6 +71,10 @@ def create_results_dir(output_dir: str, configs: list, ignore_existing: bool):
         # results dir inside task dir
         subdir_path = task_path / "results"
         subdir_path.mkdir(exist_ok=True)
+
+        # save config
+        with open(f"{task_path}/config.json", "w") as f:
+            json.dump(asdict(config), f, indent=2)   
 
         # add accelerate config to classification task dir
         if isinstance(config, ClassificationConfig):
