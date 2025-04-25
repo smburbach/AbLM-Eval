@@ -5,7 +5,7 @@ from importlib.resources import files
 import gc
 import torch
 
-from .utils import single_model_dir, multiple_models_dir
+from .utils import create_results_dir
 from .configs import ClassificationConfig
 from .tasks import classification
 
@@ -18,7 +18,7 @@ RESET = "\033[0m"
 
 def _user_prompt(prompt: str) -> bool:
     while True:
-        response = input(prompt + " (yes/NO): ").strip().lower()
+        response = input(prompt + " (yes/no): ").strip().lower()
         if response in ("yes", "no"):
             return response == "yes"
         print("Invalid response. Please enter 'yes' or 'no'.")
@@ -53,14 +53,13 @@ def _clean_up():
 
 def eval_model(model_name: str, model_path: str, configs: list):
     for itr, config in enumerate(configs, 1):
-        print(f"\n{UNDERLINE}Running Task #{itr}: {config.name}{RESET}")
+        print(f"{UNDERLINE}Running Task #{itr}: {config.name}{RESET}")
         task_fn = config.runner
         task_fn(model_name, model_path, config)
         _clean_up()
 
 
 def compare_models(configs: list, models: dict):
-    print(f"\nGenerating model comparisons...")
     for config in configs:
         compare_fn = config.comparer
         if compare_fn is None:
@@ -76,23 +75,18 @@ def eval_and_compare(
 ):
 
     # create output directory
-    if len(models) == 1:
-        single_model_dir(shared_output_dir, ignore_existing_files)
-    else:
-        multiple_models_dir(shared_output_dir, configs, ignore_existing_files)
+    create_results_dir(shared_output_dir, configs, ignore_existing_files)
 
+    # accelerate config for classification tasks
     for config in configs:
-        config.output_dir = (
-            str(config.output_dir)
-            if config.output_dir is not None
-            else str(shared_output_dir)
-        )
         if isinstance(config, ClassificationConfig):
             _override_accelerate_config(config.classification_name, config.output_dir)
 
-    for model_name, model_path in models:
-        print(f"\n{BOLD}Evaluating Model: {model_name}{RESET}")
+    # eval
+    for itr, (model_name, model_path) in enumerate(models, 1):
+        print(f"\n{BOLD}Evaluating Model #{itr}: {model_name}{RESET}")
         eval_model(model_name, model_path, configs)
 
-    if len(models) > 1:
-        compare_models(configs, models)
+    # plot comparisons
+    print(f"\n{BOLD}Generating model comparisons...{RESET}")
+    compare_models(configs, models)
