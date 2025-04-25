@@ -9,3 +9,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["ablm_eval*"]
+
+[tool.setuptools.package-data]
+"ablm_eval.tasks.classification" = ["*.yaml"]
