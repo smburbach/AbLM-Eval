@@ -74,7 +74,7 @@ def evaluate_ablms(
     create_results_dir(shared_output_dir, configs, ignore_existing_files)
 
     # eval
-    for itr, (model_name, model_path) in enumerate(models, 1):
+    for itr, (model_name, model_path) in enumerate(models.items(), 1):
         print(f"\n{BOLD}Evaluating Model #{itr}: {model_name}{RESET}")
         _eval_model(model_name, model_path, configs)
 

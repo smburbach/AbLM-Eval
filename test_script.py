@@ -12,8 +12,8 @@ from ablm_eval import (
 def main():
     # models
     models = {
-        ("ec_test", "/home/jovyan/shared/Sarah/current/BALM-MoE/moe-optimization/num_experts/models/BALM-MoE_45M-act_expertchoice_capacity1.0_4experts_lr1e-4_bs32-4xGPUs_swiglu_2025-04-21/"),
-        ("ec_test_2", "/home/jovyan/shared/Sarah/current/BALM-MoE/moe-optimization/num_experts/models/BALM-MoE_45M-act_expertchoice_capacity1.0_4experts_lr1e-4_bs32-4xGPUs_swiglu_2025-04-21/"),
+        "ec_test": "/home/jovyan/shared/Sarah/current/BALM-MoE/moe-optimization/num_experts/models/BALM-MoE_45M-act_expertchoice_capacity1.0_4experts_lr1e-4_bs32-4xGPUs_swiglu_2025-04-21/",
+        "ec_test_2": "/home/jovyan/shared/Sarah/current/BALM-MoE/moe-optimization/num_experts/models/BALM-MoE_45M-act_expertchoice_capacity1.0_4experts_lr1e-4_bs32-4xGPUs_swiglu_2025-04-21/",
     }
     shared_output_dir = "./results"
 
@@ -55,6 +55,7 @@ def main():
         generate_comparisons=True,
         ignore_existing_files=True,
     )
+    # compare_results(shared_output_dir)
 
 
 if __name__ == "__main__":
