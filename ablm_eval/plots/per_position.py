@@ -42,10 +42,12 @@ def _extract(df, sep):
     return df
 
 
-def _region_processing(df, ppl_data, model):
-
+def _region_processing(df):
+    
+    data = []
     for _, r in df.iterrows():
         mutated = bool(r["v_mutation_count_aa_heavy"] or r["v_mutation_count_aa_light"])
+        model = r["model_name"]
 
         # for both chains separately
         for chain in ["heavy", "light"]:
@@ -76,7 +78,7 @@ def _region_processing(df, ppl_data, model):
                 region_pred = pred[start:end]
                 region_seq = seq[start:end]
 
-                ppl_data.append(
+                data.append(
                     {
                         "region": region,
                         "model": model,
@@ -91,7 +93,7 @@ def _region_processing(df, ppl_data, model):
                     }
                 )
 
-    return ppl_data
+    return data
 
 
 def _per_pos_boxenplot(
@@ -151,31 +153,19 @@ def _per_pos_boxenplot(
     )
 
 
-def per_pos_compare(config, models: dict):
-    # get annotated dataset
-    keep_cols = [
-        "sequence_id",
-        "cdr_mask_heavy",
-        "cdr_mask_light",
-        "v_mutation_count_aa_heavy",
-        "v_mutation_count_aa_light",
-    ]
-    annotated = load_reference_data(config.per_pos_data, keep_columns=keep_cols)
+def per_pos_compare(config):
 
+    # file paths
     results_dir = Path(config.output_dir) / "results"
     files = list(results_dir.glob("*.parquet"))
 
-    results = []
-    for file in files:
-        res = pd.read_parquet(file)
-        res = res.merge(annotated, on="sequence_id")
-        results.append(res)
+    # concat all results
+    results = pd.concat([pd.read_parquet(file) for file in files], ignore_index=True)
 
     # extract data
-    results = [_extract(dataset, config.separator) for dataset in results]
-    data = []
-    for dataset, (model_name, _) in zip(results, models):
-        data = _region_processing(dataset, data, model_name)
+    results = _extract(results, config.separator)
+
+    data = _region_processing(results)
     data_df = pd.DataFrame(data)
 
     for mutated in [True, False]:

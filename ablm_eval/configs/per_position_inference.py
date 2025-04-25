@@ -40,7 +40,16 @@ class PerPositionConfig:
     truncate: bool = False
     add_special_tokens: bool = False
     num_proc: int = 128
-    keep_columns: list = field(default_factory=lambda: ["sequence_id", "sequence"])
+    keep_columns: list = field(
+        default_factory = lambda: [
+            "sequence_id",
+            "sequence",
+            "cdr_mask_heavy",
+            "cdr_mask_light",
+            "v_mutation_count_aa_heavy",
+            "v_mutation_count_aa_light",
+        ]
+    )
 
     # output
     output_dir: str = None

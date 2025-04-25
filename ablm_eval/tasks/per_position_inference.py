@@ -16,7 +16,7 @@ __all__ = ["run_per_pos"]
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def _inference_batched(model, tokenizer, seq_id, seq, input_ids):
+def _inference_batched(model, tokenizer, input_ids):
     seq_len = input_ids.shape[0]
 
     # create a batch of inputs with one position masked at a time
@@ -52,11 +52,9 @@ def _inference_batched(model, tokenizer, seq_id, seq, input_ids):
         pred_strings = [tokenizer.decode([t]) for t in pred_tokens]
 
     return {
-        "sequence_id": seq_id,
         "loss": ce_loss.tolist(),
         "perplexity": ppl.tolist(),
         "prediction": pred_strings,
-        "sequence": seq,
     }
 
 
@@ -80,11 +78,19 @@ def run_per_pos(model_name: str, model_path: str, config: PerPositionConfig):
         result = _inference_batched(
             model,
             tokenizer,
-            seq_id=example["sequence_id"],
-            seq=example["sequence"],
             input_ids=torch.tensor(example["input_ids"]),
         )
-        results.append(result)
+        # merge results with reference df
+        combined = {
+            "model_name": model_name,
+            **{
+                k: v
+                for k, v in example.items()
+                if k not in ("input_ids", "attention_mask")
+            },
+            **result,
+        }
+        results.append(combined)
 
     # save results
     df = pl.DataFrame(results)
