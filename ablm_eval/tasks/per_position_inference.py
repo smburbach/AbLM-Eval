@@ -1,15 +1,16 @@
+from typing import Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import polars as pl
 from tqdm import tqdm
-from transformers import TrainingArguments, Trainer, DataCollatorForLanguageModeling
 
 from ..utils import (
     load_model_and_tokenizer,
     load_and_tokenize,
 )
-from ..configs import PerPositionConfig
+from ..configs import PerPositionConfig, MutationPredConfig
 
 __all__ = ["run_per_pos"]
 
@@ -48,17 +49,24 @@ def _inference_batched(model, tokenizer, input_ids):
         ppl = torch.exp(ce_loss)
 
         # get predictions
-        pred_tokens = logits[range(seq_len), torch.arange(seq_len), :].argmax(dim=-1)
+        masked_logits = logits[diagonal_idxs, diagonal_idxs]
+        probs = masked_logits.softmax(dim=-1)
+        pred_tokens = masked_logits.argmax(dim=-1)
         pred_strings = [tokenizer.decode([t]) for t in pred_tokens]
 
     return {
         "loss": ce_loss.tolist(),
         "perplexity": ppl.tolist(),
+        "probabilities": probs.tolist(),
         "prediction": pred_strings,
     }
 
 
-def run_per_pos(model_name: str, model_path: str, config: PerPositionConfig):
+def run_per_pos(
+    model_name: str,
+    model_path: str,
+    config: Union[PerPositionConfig, MutationPredConfig],
+):
 
     # load model & tokenizer
     model, tokenizer = load_model_and_tokenizer(model_path, task="mlm")
@@ -69,7 +77,7 @@ def run_per_pos(model_name: str, model_path: str, config: PerPositionConfig):
 
     # load & process dataset
     tokenized_dataset = load_and_tokenize(
-        data_path=config.per_pos_data, tokenizer=tokenizer, config=config
+        data_path=config.data_path, tokenizer=tokenizer, config=config
     )
 
     # inference
@@ -95,5 +103,5 @@ def run_per_pos(model_name: str, model_path: str, config: PerPositionConfig):
     # save results
     df = pl.DataFrame(results)
     df.write_parquet(
-        f"{config.output_dir}/results/{model_name}_per-pos-inference.parquet"
+        f"{config.output_dir}/results/{model_name}_{config.task_dir}.parquet"
     )

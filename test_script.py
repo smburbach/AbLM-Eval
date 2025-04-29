@@ -27,9 +27,12 @@ def main():
             light_column="sequence_aa_light",
         ),
         PerPositionConfig(
-            per_pos_data=f"{dir}paired-sep-1k-annotated.csv",
+            data_path=f"{dir}paired-sep-1k-annotated.csv",
             heavy_column="sequence_aa_heavy",
             light_column="sequence_aa_light",
+        ),
+        MutationPredConfig(
+            data_path=f"{dir}paired-sep-1k-annotated.csv",
         ),
         ClassificationConfig(
             dataset_dir="/home/jovyan/shared/Sarah/current/curr-pMLM/eval/specificity-classification/data/TTE-5_HC/",

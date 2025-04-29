@@ -26,7 +26,34 @@ class MutationPredConfig:
         pass
 
     # required
-    mutation_data: str
+    data_path: str
+    data_processed: bool = False
+
+    # data processing
+    sequence_column: Optional[str] = "sequence_germ"
+    heavy_column: Optional[str] = None
+    light_column: Optional[str] = None
+    separator: str = "<cls>"
+
+    # tokenization
+    padding: Union[bool, str] = False
+    max_len: int = None
+    truncate: bool = False
+    add_special_tokens: bool = False
+    num_proc: int = 128
+    keep_columns: list = field(
+        default_factory=lambda: [
+            "sequence_id",
+            "v_mutation_count_aa_heavy",
+            "heavy_mutated",
+            "heavy_germ",
+            "v_mutation_count_aa_light",
+            "light_mutated",
+            "light_germ",
+            "sequence_mutated",
+            "sequence_germ",
+        ]
+    )
 
     # output
     output_dir: str = None

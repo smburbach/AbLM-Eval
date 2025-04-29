@@ -27,7 +27,7 @@ class PerPositionConfig:
         return per_pos_compare
 
     # required
-    per_pos_data: str
+    data_path: str
 
     # data processing
     sequence_column: Optional[str] = None
