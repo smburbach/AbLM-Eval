@@ -7,28 +7,35 @@ from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 __all__ = ["load_and_tokenize"]
 
 
-def _generate_sequence(dataset, column_names, heavy_column, light_column, separator):
+def _generate_sequence(dataset, column_names, config):
     """
     Handle the logic of combining heavy_column and light_column into 'sequence' if necessary.
     """
+    seq_column = config.sequence_column
+    h_column = config.heavy_column
+    l_column = config.light_column
 
-    if heavy_column and light_column:
-        if (heavy_column in column_names) and (light_column in column_names):
+    if (h_column and l_column) and not seq_column:
+        if (h_column in column_names) and (l_column in column_names):
             # concat heavy and light sequences to create 'sequence' column
             dataset = dataset.map(
                 lambda x: {
-                    "sequence": "".join(x[heavy_column])
-                    + separator
-                    + "".join(x[light_column])
+                    "sequence": "".join(x[h_column])
+                    + config.separator
+                    + "".join(x[l_column])
                 },
             )
+            config.sequence_column = "sequence"
         else:
             raise ValueError(
-                f"Both columns {heavy_column} and {light_column} must exist in the dataset."
+                f"Both columns {h_column} and {l_column} must exist in the dataset."
             )
-    elif "sequence" not in column_names:
+    elif seq_column and not (h_column or l_column):
+        if seq_column not in column_names:
+            raise ValueError(f"The column {seq_column} must exist in the dataset.")
+    else:
         raise ValueError(
-            "The dataset does not contain a 'sequence' column and no 'heavy_column' and 'light_column' were provided."
+            "Please provide either the 'sequence_column' or both the 'heavy_column' and 'light_column'."
         )
 
     return dataset
@@ -55,16 +62,9 @@ def load_and_tokenize(
     )
 
     # use 'heavy_column' and 'light_column' to create 'sequence' column
-    # if not provided, use the'sequence' column if it exists
-    # otherwise, throw error
+    # or use the 'sequence_column'
     columns = dataset[key].column_names
-    dataset = _generate_sequence(
-        dataset,
-        column_names=columns,
-        heavy_column=config.heavy_column,
-        light_column=config.light_column,
-        separator=config.separator,
-    )
+    dataset = _generate_sequence(dataset, column_names=columns, config=config)
 
     # determine columns to drop
     # never drop label column
@@ -73,7 +73,7 @@ def load_and_tokenize(
     # tokenize
     tokenized_dataset = dataset.map(
         lambda x: tokenizer(
-            x["sequence"],
+            x[config.sequence_column],
             padding=config.padding,
             max_length=config.max_len,
             truncation=config.truncate,

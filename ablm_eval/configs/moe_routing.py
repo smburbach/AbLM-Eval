@@ -29,6 +29,7 @@ class RoutingConfig:
     routing_data: str
 
     # data processing
+    sequence_column: Optional[str] = None
     heavy_column: Optional[str] = None
     light_column: Optional[str] = None
     heavy_cdr_column: Optional[str] = "cdr_mask_heavy"

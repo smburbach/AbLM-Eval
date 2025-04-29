@@ -30,6 +30,7 @@ class InferenceConfig:
     inference_data: str
 
     # data processing
+    sequence_column: Optional[str] = None
     heavy_column: Optional[str] = None
     light_column: Optional[str] = None
     separator: str = "<cls>"
