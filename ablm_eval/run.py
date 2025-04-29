@@ -45,12 +45,12 @@ def compare_results(output_dir: str = None, configs: list = None):
         configs = []
         output_path = Path(output_dir)
         for folder_path in output_path.iterdir():
-            if folder_path.is_dir():
+            if folder_path.is_dir() and not folder_path.name.startswith("."):
                 config_file_path = folder_path / "config.json"
                 config = config_from_json(str(config_file_path))
                 configs.append(config)
 
-    # evaluate 
+    # evaluate
     for config in configs:
         compare_fn = config.comparer
         if compare_fn is None:
@@ -62,8 +62,8 @@ def evaluate_ablms(
     models: dict,
     configs: list,
     shared_output_dir: str = "./results",
-    generate_comparisons: str = True,
-    ignore_existing_files=False,
+    generate_comparisons: bool = True,
+    ignore_existing_files: bool = False,
 ):
     """
     Evaluate (and optionally compare) the provided models on the

@@ -61,13 +61,11 @@ def load_and_tokenize(
         num_proc=config.num_proc,
     )
 
-    # use 'heavy_column' and 'light_column' to create 'sequence' column
-    # or use the 'sequence_column'
+    # format sequence column if needed
     columns = dataset[key].column_names
     dataset = _generate_sequence(dataset, column_names=columns, config=config)
 
     # determine columns to drop
-    # never drop label column
     drop_cols = [col for col in columns if col not in config.keep_columns]
 
     # tokenize

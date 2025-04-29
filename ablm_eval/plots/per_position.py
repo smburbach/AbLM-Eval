@@ -104,6 +104,8 @@ def _per_pos_boxenplot(
 ):
     fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
 
+    model_order = sorted(df["model"].unique())
+
     for i, chain in enumerate(["heavy", "light"]):
         # boxplot
         sns.boxenplot(
@@ -111,6 +113,7 @@ def _per_pos_boxenplot(
             x="region",
             y=y_axis,
             hue="model",
+            hue_order=model_order,
             dodge=True,
             showfliers=False,
             k_depth="proportion",
