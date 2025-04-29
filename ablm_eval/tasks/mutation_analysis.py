@@ -1,6 +1,7 @@
 import torch
 import abutils
 import polars as pl
+import pandas as pd
 
 from ..configs import MutationPredConfig
 from ..utils import load_reference_data
@@ -68,6 +69,109 @@ def _mutation_preprocessing(config):
     config.data_processed = True
 
 
+def _analyze_row(row):
+
+    seq_mut = row.sequence_mutated.replace("<cls>", "X")
+    seq_germ = row.sequence_germ.replace("<cls>", "X")
+    assert len(seq_mut) == len(seq_germ)
+
+    mutated = []
+    germs = []
+    germ_probs = []
+    preds = []
+    pred_probs = []
+    predicted_germs = []
+
+    for mut, germ, germ_tok, pred_tok, pred, probs in zip(
+        seq_mut,
+        seq_germ,
+        row.tokenized_sequence,
+        row.prediction_tokens,
+        row.prediction,
+        row.probabilities,
+    ):
+        if germ == "X":
+            germ_prob = 1.0
+            pred_prob = 1.0
+            predicted_germ = True
+        else:
+            germ_prob = probs[germ_tok]
+            pred_prob = probs[pred_tok]
+            predicted_germ = germ_tok == pred_tok
+
+        germs.append(germ)
+        germ_probs.append(germ_prob)
+        preds.append(pred)
+        pred_probs.append(pred_prob)
+        predicted_germs.append(predicted_germ)
+        mutated.append(mut)
+
+    return pd.Series(
+        {
+            "model_name": row.model_name,
+            "sequence_id": row.sequence_id,
+            "positions": list(range(0, len(mutated))),
+            "mutated_aa": mutated,
+            "germline_aa": germs,
+            "germ_probs": germ_probs,
+            "pred_aa": preds,
+            "pred_probs": pred_probs,
+            "predicted_germ": predicted_germs,
+        }
+    )
+
+
+AA_CHEM = [
+    ["A", "G", "I", "L", "M", "V"],
+    ["C", "S", "T", "P", "N", "Q"],
+    ["D", "E"],
+    ["K", "R", "H"],
+    ["F", "Y", "W"],
+]
+
+
+def get_aa_group(aa):
+    return next((group for group in AA_CHEM if aa in group), [])
+
+
+def _process_per_pos_results(results):
+
+    results = results.apply(_analyze_row, axis=1)
+
+    cols = [
+        "positions",
+        "mutated_aa",
+        "germline_aa",
+        "germ_probs",
+        "pred_aa",
+        "pred_probs",
+        "predicted_germ",
+    ]
+    results = results.explode(cols)
+
+    # position match
+    # if it predicted a mutation, is there actually a mutation in this location?
+    results["correct_position"] = (results["predicted_germ"] == False) & (
+        results["mutated_aa"] != results["germline_aa"]
+    )
+
+    # chemistry match
+    # if it predicted a mutation (and there is a mutation), is it a chemical match?
+    results["correct_chemistry"] = results.apply(
+        lambda row: (row["correct_position"])
+        & (row["pred_aa"] in get_aa_group(row["mutated_aa"])),
+        axis=1,
+    )
+
+    # amino acid match
+    # if it predicted a mutation (and there is a mutation), is it the right amino acid?
+    results["correct_amino_acid"] = (results["correct_position"] == True) & (
+        results["mutated_aa"] == results["pred_aa"]
+    )
+
+    return results
+
+
 def run_mutation_analysis(model_name: str, model_path: str, config: MutationPredConfig):
 
     # process data for mutation pred
@@ -76,3 +180,16 @@ def run_mutation_analysis(model_name: str, model_path: str, config: MutationPred
 
     # run per position inference on processed data
     run_per_pos(model_name, model_path, config)
+
+    # load & process per position inference results
+    results = load_reference_data(
+        f"{config.output_dir}/results/{model_name}_per-position-inference.parquet"
+    )
+
+    # TODO: convert processing to polars for consistency
+    df = _process_per_pos_results(results)
+
+    # save processed results
+    df.to_parquet(
+        f"{config.output_dir}/results/{model_name}_mutation-analysis.parquet"
+    )

@@ -55,9 +55,11 @@ def _inference_batched(model, tokenizer, input_ids):
         pred_strings = [tokenizer.decode([t]) for t in pred_tokens]
 
     return {
+        "tokenized_sequence": input_ids.tolist(),
         "loss": ce_loss.tolist(),
         "perplexity": ppl.tolist(),
         "probabilities": probs.tolist(),
+        "prediction_tokens": pred_tokens.tolist(),
         "prediction": pred_strings,
     }
 
@@ -103,5 +105,5 @@ def run_per_pos(
     # save results
     df = pl.DataFrame(results)
     df.write_parquet(
-        f"{config.output_dir}/results/{model_name}_{config.task_dir}.parquet"
+        f"{config.output_dir}/results/{model_name}_per-position-inference.parquet"
     )
