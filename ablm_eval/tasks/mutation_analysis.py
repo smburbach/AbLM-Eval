@@ -32,7 +32,7 @@ def _mutation_preprocessing(config):
     ]
 
     data = []
-    for row in  tqdm(df.itertuples(), total=len(df), desc="Pre-processing data"):
+    for row in tqdm(df.itertuples(), total=len(df), desc="Pre-processing data"):
         # translate heavy chain
         hseq = abutils.tl.translate(row.sequence_alignment_heavy)
         hgerm = abutils.tl.translate(row.germline_alignment_heavy)
@@ -73,6 +73,11 @@ def _analyze_row(row, separator: str):
     mutated_aa = list(row.sequence_mutated.replace(separator, "X"))
     positions = list(range(len(germline_aa)))
 
+    # calculate number of mutations
+    num_mutations = sum(
+        (a != b) for a, b in zip(germline_aa, mutated_aa) if a != "X" and b != "X"
+    )
+
     # extract probabilities
     germ_probs, pred_probs, predicted_germs = [], [], []
     for germ, germ_tok, pred_tok, probs in zip(
@@ -81,7 +86,7 @@ def _analyze_row(row, separator: str):
         row.prediction_tokens,
         row.probabilities,
     ):
-        if germ == "X": # ensures separator gets filtered out
+        if germ == "X":  # ensures separator gets filtered out
             germ_probs.append(1.0)
             pred_probs.append(1.0)
             predicted_germs.append(True)
@@ -95,6 +100,7 @@ def _analyze_row(row, separator: str):
         {
             "model_name": row.model_name,
             "sequence_id": row.sequence_id,
+            "total_mutations": num_mutations,
             "positions": positions,
             "mutated_aa": mutated_aa,
             "germline_aa": germline_aa,

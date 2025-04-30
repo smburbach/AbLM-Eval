@@ -33,6 +33,7 @@ def main():
         ),
         MutationPredConfig(
             data_path=f"{dir}paired-sep-1k-annotated.csv",
+            sequence_column="sequence_mutated" # or "sequence_germ"
         ),
         ClassificationConfig(
             dataset_dir="/home/jovyan/shared/Sarah/current/curr-pMLM/eval/specificity-classification/data/TTE-5_HC/",

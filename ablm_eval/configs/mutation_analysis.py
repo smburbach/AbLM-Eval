@@ -23,14 +23,15 @@ class MutationPredConfig:
 
     @property
     def comparer(self):
-        pass
+        from ..plots import mut_analysis_compare
+        return mut_analysis_compare
 
     # required
     data_path: str
     data_processed: bool = False
 
     # data processing
-    sequence_column: Optional[str] = "sequence_germ"
+    sequence_column: Optional[str] = "sequence_mutated"
     heavy_column: Optional[str] = None
     light_column: Optional[str] = None
     separator: str = "<cls>"
@@ -45,11 +46,7 @@ class MutationPredConfig:
         default_factory=lambda: [
             "sequence_id",
             "v_mutation_count_aa_heavy",
-            "heavy_mutated",
-            "heavy_germ",
             "v_mutation_count_aa_light",
-            "light_mutated",
-            "light_germ",
             "sequence_mutated",
             "sequence_germ",
         ]
