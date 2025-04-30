@@ -3,7 +3,7 @@ from typing import Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import polars as pl
+import pandas as pd
 from tqdm import tqdm
 
 from ..utils import (
@@ -103,7 +103,7 @@ def run_per_pos(
         results.append(combined)
 
     # save results
-    df = pl.DataFrame(results)
-    df.write_parquet(
+    df = pd.DataFrame(results)
+    df.to_parquet(
         f"{config.output_dir}/results/{model_name}_per-position-inference.parquet"
     )

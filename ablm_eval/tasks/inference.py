@@ -1,5 +1,3 @@
-import pathlib
-
 import pandas as pd
 from transformers import TrainingArguments, Trainer, DataCollatorForLanguageModeling
 

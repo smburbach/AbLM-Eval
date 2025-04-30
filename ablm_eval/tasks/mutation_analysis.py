@@ -1,7 +1,7 @@
 import torch
 import abutils
-import polars as pl
 import pandas as pd
+from tqdm import tqdm
 
 from ..configs import MutationPredConfig
 from ..utils import load_reference_data
@@ -32,7 +32,7 @@ def _mutation_preprocessing(config):
     ]
 
     data = []
-    for row in df.itertuples():
+    for row in  tqdm(df.itertuples(), total=len(df), desc="Pre-processing data"):
         # translate heavy chain
         hseq = abutils.tl.translate(row.sequence_alignment_heavy)
         hgerm = abutils.tl.translate(row.germline_alignment_heavy)
@@ -44,77 +44,62 @@ def _mutation_preprocessing(config):
         # combine heavy and light chains
         germ_aa = f"{hgerm}{config.separator}{lgerm}"
         seq_aa = f"{hseq}{config.separator}{lseq}"
+        assert len(germ_aa) == len(seq_aa)
 
         data.append(
             {
                 "sequence_id": row.sequence_id,
                 "v_mutation_count_aa_heavy": row.v_mutation_count_aa_heavy,
-                "heavy_mutated": hseq,
-                "heavy_germ": hgerm,
                 "v_mutation_count_aa_light": row.v_mutation_count_aa_light,
-                "light_mutated": lseq,
-                "light_germ": lgerm,
                 "sequence_mutated": seq_aa,
                 "sequence_germ": germ_aa,
             }
         )
-    data_df = pl.DataFrame(data)
+    data_df = pd.DataFrame(data)
 
     # save processed data
     data_path = f"{config.output_dir}/processed-data.parquet"
-    data_df.write_parquet(data_path)
+    data_df.to_parquet(data_path)
 
     # update config for future models using the same config
     config.data_path = data_path
     config.data_processed = True
 
 
-def _analyze_row(row):
+def _analyze_row(row, separator: str):
 
-    seq_mut = row.sequence_mutated.replace("<cls>", "X")
-    seq_germ = row.sequence_germ.replace("<cls>", "X")
-    assert len(seq_mut) == len(seq_germ)
+    # convert to lists
+    germline_aa = list(row.sequence_germ.replace(separator, "X"))
+    mutated_aa = list(row.sequence_mutated.replace(separator, "X"))
+    positions = list(range(len(germline_aa)))
 
-    mutated = []
-    germs = []
-    germ_probs = []
-    preds = []
-    pred_probs = []
-    predicted_germs = []
-
-    for mut, germ, germ_tok, pred_tok, pred, probs in zip(
-        seq_mut,
-        seq_germ,
+    # extract probabilities
+    germ_probs, pred_probs, predicted_germs = [], [], []
+    for germ, germ_tok, pred_tok, probs in zip(
+        germline_aa,
         row.tokenized_sequence,
         row.prediction_tokens,
-        row.prediction,
         row.probabilities,
     ):
-        if germ == "X":
-            germ_prob = 1.0
-            pred_prob = 1.0
-            predicted_germ = True
+        if germ == "X": # ensures separator gets filtered out
+            germ_probs.append(1.0)
+            pred_probs.append(1.0)
+            predicted_germs.append(True)
         else:
-            germ_prob = probs[germ_tok]
-            pred_prob = probs[pred_tok]
-            predicted_germ = germ_tok == pred_tok
+            germ_probs.append(probs[germ_tok])
+            pred_probs.append(probs[pred_tok])
+            predicted_germs.append(germ_tok == pred_tok)
 
-        germs.append(germ)
-        germ_probs.append(germ_prob)
-        preds.append(pred)
-        pred_probs.append(pred_prob)
-        predicted_germs.append(predicted_germ)
-        mutated.append(mut)
-
+    # return row
     return pd.Series(
         {
             "model_name": row.model_name,
             "sequence_id": row.sequence_id,
-            "positions": list(range(0, len(mutated))),
-            "mutated_aa": mutated,
-            "germline_aa": germs,
+            "positions": positions,
+            "mutated_aa": mutated_aa,
+            "germline_aa": germline_aa,
             "germ_probs": germ_probs,
-            "pred_aa": preds,
+            "pred_aa": row.prediction,
             "pred_probs": pred_probs,
             "predicted_germ": predicted_germs,
         }
@@ -134,9 +119,9 @@ def get_aa_group(aa):
     return next((group for group in AA_CHEM if aa in group), [])
 
 
-def _process_per_pos_results(results):
+def _process_per_pos_results(results: pd.DataFrame, separator: str):
 
-    results = results.apply(_analyze_row, axis=1)
+    results = results.apply(_analyze_row, separator=separator, axis=1)
 
     cols = [
         "positions",
@@ -185,11 +170,7 @@ def run_mutation_analysis(model_name: str, model_path: str, config: MutationPred
     results = load_reference_data(
         f"{config.output_dir}/results/{model_name}_per-position-inference.parquet"
     )
-
-    # TODO: convert processing to polars for consistency
-    df = _process_per_pos_results(results)
+    df = _process_per_pos_results(results, config.separator)
 
     # save processed results
-    df.to_parquet(
-        f"{config.output_dir}/results/{model_name}_mutation-analysis.parquet"
-    )
+    df.to_parquet(f"{config.output_dir}/results/{model_name}_mutation-analysis.parquet")
