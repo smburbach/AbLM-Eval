@@ -5,8 +5,6 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from ..utils.data import load_reference_data
-
 __all__ = ["per_pos_compare"]
 
 
@@ -44,7 +42,7 @@ def _extract(df):
 
 
 def _region_processing(df):
-    
+
     data = []
     for _, r in df.iterrows():
         mutated = bool(r["v_mutation_count_aa_heavy"] or r["v_mutation_count_aa_light"])

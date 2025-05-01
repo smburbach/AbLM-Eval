@@ -6,7 +6,6 @@ from ..utils import (
     load_model_and_tokenizer,
     load_and_tokenize,
     move_to_cpu,
-    load_reference_data,
 )
 from ..configs import RoutingConfig
 
@@ -86,6 +85,13 @@ def _process_outputs(test_data, config: RoutingConfig):
             max_length=config.max_len,
         )
 
+        # sequence
+        seq = list('X' + getattr(row, config.heavy_column) + 'X' + getattr(row, config.heavy_column))
+        if len(seq) < config.max_len:
+            seq.extend(['X'] * (config.max_len - len(seq)))
+        else:
+            seq = seq[:config.max_len]
+
         # length data
         lengths.append({"sequence_id": sequence_id, **region_lengths})
 
@@ -112,6 +118,7 @@ def _process_outputs(test_data, config: RoutingConfig):
                             "layer": layer,
                             "expert_id": expert_id,
                             "token_position": pos,
+                            "amino_acid": seq[pos],
                             "region": region_map.get(pos, "Unknown"),
                         }
                     )
@@ -147,7 +154,13 @@ def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig
 
     # update keep_columns
     (config.keep_columns).extend(
-        [config.id_column, "sequence", config.heavy_cdr_column, config.light_cdr_column]
+        [
+            config.id_column,
+            config.heavy_column,
+            config.light_column,
+            config.heavy_cdr_column,
+            config.light_cdr_column,
+        ]
     )
 
     # load & process dataset
@@ -161,11 +174,11 @@ def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig
     outputs = _inference(model, tokenized_dataset)
 
     # append outputs to original dataset
-    ref = load_reference_data(config.routing_data, keep_columns=config.keep_columns)
-    ref["balmmoe_output"] = outputs
+    data = tokenized_dataset.to_pandas()
+    data["balmmoe_output"] = outputs
 
     # process outputs
-    extracted, length_reference = _process_outputs(ref, config)
+    extracted, length_reference = _process_outputs(data, config)
 
     # save results
     extracted.to_parquet(

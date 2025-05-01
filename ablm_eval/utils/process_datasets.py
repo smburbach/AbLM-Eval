@@ -25,7 +25,6 @@ def _generate_sequence(dataset, column_names, config):
                     + "".join(x[l_column])
                 },
             )
-            config.sequence_column = "sequence"
         else:
             raise ValueError(
                 f"Both columns {h_column} and {l_column} must exist in the dataset."
@@ -69,9 +68,10 @@ def load_and_tokenize(
     drop_cols = [col for col in columns if col not in config.keep_columns]
 
     # tokenize
+    seq_column = config.sequence_column if config.sequence_column is not None else "sequence"
     tokenized_dataset = dataset.map(
         lambda x: tokenizer(
-            x[config.sequence_column],
+            x[seq_column],
             padding=config.padding,
             max_length=config.max_len,
             truncation=config.truncate,
