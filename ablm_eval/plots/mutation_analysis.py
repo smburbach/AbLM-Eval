@@ -111,7 +111,8 @@ def _plot_match_ratios(ratio_dict, output_dir: str = None):
                 f"{yval:.2f}",
                 ha="center",
                 va="bottom",
-                fontsize=9,
+                fontsize=7,
+                rotation=45
             )
 
     # dashed line for mean mutations per sequence
@@ -146,6 +147,44 @@ def _plot_match_ratios(ratio_dict, output_dir: str = None):
     )
 
 
+def _plot_boxen_match_ratios(data_dict, output_dir: str = None):
+    # Flatten the data into a long-form DataFrame for seaborn
+    records = []
+    for model, df in data_dict.items():
+        grouped = df.groupby("sequence_id")[["correct_position", "correct_chemistry", "correct_amino_acid"]].sum()
+        for seq_id, row in grouped.iterrows():
+            records.append({
+                "Model": model,
+                "Sequence ID": seq_id,
+                "Position Match": row["correct_position"],
+                "Chemical Match": row["correct_chemistry"],
+                "Amino Acid Match": row["correct_amino_acid"]
+            })
+
+    long_df = pd.DataFrame(records)
+    melted = long_df.melt(id_vars=["Model", "Sequence ID"], 
+                          value_vars=["Position Match", "Chemical Match", "Amino Acid Match"],
+                          var_name="Match Type", 
+                          value_name="Matches per Sequence")
+
+    # boxenplot
+    plt.figure(figsize=(12, 6))
+    sns.boxenplot(data=melted, x="Match Type", y="Matches per Sequence", hue="Model")
+
+    # labels & ticks
+    plt.title("Distribution of Mutation Match Types per Sequence")
+    plt.ylabel("Number of Matches")
+    plt.xlabel("")
+    plt.legend(title="Model")
+
+    plt.tight_layout()
+    plt.savefig(
+        f"./{output_dir}/mutation-match-ratios-boxen.png",
+        bbox_inches="tight",
+        dpi=300,
+    )
+
+
 def mut_analysis_compare(results_dir, output_dir, **kwargs):
     # load results
     data = {}
@@ -175,3 +214,4 @@ def mut_analysis_compare(results_dir, output_dir, **kwargs):
     # plot ratios of position, chemical and aa matches
     ratio_data = _compute_match_ratios(data)
     _plot_match_ratios(ratio_data, output_dir=output_dir)
+    _plot_boxen_match_ratios(data, output_dir=output_dir)
