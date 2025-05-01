@@ -13,7 +13,7 @@ __all__ = ["per_pos_compare"]
 REGIONS = ["FR1", "CDR1", "FR2", "CDR2", "FR3", "CDR3", "FR4"]
 
 
-def _extract(df, sep):
+def _extract(df):
     h_loss = []
     l_loss = []
     h_pred = []
@@ -23,6 +23,7 @@ def _extract(df, sep):
 
     for _, r in df.iterrows():
         hlen = len(r["cdr_mask_heavy"])
+        sep = r["separator"]
         seplen = sep.count("<")
 
         h_loss.append(r["loss"][:hlen])
@@ -98,9 +99,10 @@ def _region_processing(df):
 
 def _per_pos_boxenplot(
     df: pd.DataFrame,
-    y_axis: str = "median_loss",
-    output_dir: str = None,
-    plot_desc: str = None,
+    y_axis: str,
+    output_dir: str,
+    task_str: str,
+    plot_desc: str,
 ):
     fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
 
@@ -148,35 +150,31 @@ def _per_pos_boxenplot(
     )
 
     plt.tight_layout()
-
     plt.savefig(
-        f"./{output_dir}/combined-results_{plot_desc}.png",
+        f"./{output_dir}/combined-{task_str}-results_{plot_desc}.png",
         bbox_inches="tight",
         dpi=300,
     )
 
 
-def per_pos_compare(config):
-
-    # file paths
-    results_dir = Path(config.output_dir) / "results"
-    files = list(results_dir.glob("*.parquet"))
-
-    # concat all results
+def per_pos_compare(results_dir, output_dir, task_str, **kwargs):
+    # load & concat results
+    files = list(Path(results_dir).glob("*.parquet"))
     results = pd.concat([pd.read_parquet(file) for file in files], ignore_index=True)
 
-    # extract data
-    results = _extract(results, config.separator)
-
+    # process results
+    results = _extract(results)
     data = _region_processing(results)
     data_df = pd.DataFrame(data)
 
+    # plots
     for mutated in [True, False]:
         df = data_df[(data_df["mutated"] == mutated)]
         for metric in ["median_loss", "accuracy"]:
             _per_pos_boxenplot(
                 df,
                 y_axis=metric,
-                output_dir=config.output_dir,
+                output_dir=output_dir,
+                task_str=task_str,
                 plot_desc=f"{'mutated' if mutated else 'unmutated'}_{metric}",
             )

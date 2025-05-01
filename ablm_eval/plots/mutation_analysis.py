@@ -146,14 +146,10 @@ def _plot_match_ratios(ratio_dict, output_dir: str = None):
     )
 
 
-def mut_analysis_compare(config):
-
-    # file paths
-    # TODO: use task dir (get base path from compare_results)
-    results_dir = Path(config.output_dir) / "results"
-
+def mut_analysis_compare(results_dir, output_dir, **kwargs):
+    # load results
     data = {}
-    for file in results_dir.glob("*mutation-analysis.parquet"):
+    for file in Path(results_dir).glob("*mutation-analysis.parquet"):
         df = pd.read_parquet(file)
         model_name = df["model_name"].iloc[0]
         data[model_name] = df
@@ -163,7 +159,7 @@ def mut_analysis_compare(config):
         data, filter_column="predicted_germ", filter_bool=False
     )
     _plot_histogram(
-        all_mutations, output_dir=config.output_dir, plot_desc="all-predicted-mutations"
+        all_mutations, output_dir=output_dir, plot_desc="all-predicted-mutations"
     )
 
     # plot distribution of all correctly placed predicted mutations
@@ -172,10 +168,10 @@ def mut_analysis_compare(config):
     )
     _plot_histogram(
         true_mutations,
-        output_dir=config.output_dir,
+        output_dir=output_dir,
         plot_desc="true-positions-predicted-mutations",
     )
 
     # plot ratios of position, chemical and aa matches
     ratio_data = _compute_match_ratios(data)
-    _plot_match_ratios(ratio_data, output_dir=config.output_dir)
+    _plot_match_ratios(ratio_data, output_dir=output_dir)

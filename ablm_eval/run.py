@@ -3,14 +3,68 @@ from pathlib import Path
 import gc
 import torch
 
-from .utils import create_results_dir, config_from_json
+from .utils.output import create_results_dir
+from .utils.compare import (
+    _config_from_json,
+    _comparer_from_str,
+)
 
 
-__all__ = ["evaluate_ablms", "compare_results"]
+__all__ = ["evaluate_ablms", "compare_results", "compare_task"]
 
 BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
 RESET = "\033[0m"
+
+
+def compare_task(task_type: str, task_results_dir: str, output_dir: str = None):
+    """
+    Compare task results in a given output directory.
+    """
+    # get compare fn
+    compare_fn = _comparer_from_str(task_type)
+    if compare_fn is None:
+        return
+
+    # if output dir not provided
+    output_dir = output_dir or task_results_dir
+
+    # run comparison fn
+    compare_fn(results_dir=task_results_dir, output_dir=output_dir, task_str=task_type)
+
+
+def compare_results(output_dir: str = None, configs: list = None):
+    """
+    Compare model results in a given output directory, assuming this directory
+    follows the directory structure created in `evaluate_ablms`.
+    """
+
+    if bool(output_dir) == bool(configs): 
+        raise ValueError("Provide either `output_dir` or `configs`, but not both.")
+
+    if output_dir:
+        for folder in Path(output_dir).iterdir():
+            if folder.is_dir() and not folder.name.startswith("."):
+                config_path = folder / "config.json"
+                if config_path.exists():
+                    # extract info from config
+                    config = _config_from_json(config_path)
+
+                    # run comparison
+                    compare_task(
+                        task_type=config["task_type"],
+                        task_results_dir=config["results_dir"],
+                        output_dir=config["output_dir"],
+                    )
+
+    if configs:
+        for config in configs:
+            output_dir = config.output_dir
+            compare_task(
+                task_type=config.config_type,
+                task_results_dir=f"{output_dir}/results/",
+                output_dir=output_dir,
+            )
 
 
 def _clean_up():
@@ -19,43 +73,14 @@ def _clean_up():
 
 
 def _eval_model(model_name: str, model_path: str, configs: list):
-    """
-    Evaluates single model based on task configs.
-    Should not be called by user directly, because it assumes the
-    output directories have been created.
-    """
-
     for itr, config in enumerate(configs, 1):
+        # run task
         print(f"{UNDERLINE}Running Task #{itr}: {config.name}{RESET}")
         task_fn = config.runner
         task_fn(model_name, model_path, config)
+
+        # clean up memory
         _clean_up()
-
-
-def compare_results(output_dir: str = None, configs: list = None):
-    """
-    Compare model results in a given output directory.
-    """
-
-    if output_dir is None and configs is None:
-        raise ValueError("Either the output_dir or configs list must be provided.")
-
-    # load configs from output_dir if not provided
-    if configs is None:
-        configs = []
-        output_path = Path(output_dir)
-        for folder_path in output_path.iterdir():
-            if folder_path.is_dir() and not folder_path.name.startswith("."):
-                config_file_path = folder_path / "config.json"
-                config = config_from_json(str(config_file_path))
-                configs.append(config)
-
-    # evaluate
-    for config in configs:
-        compare_fn = config.comparer
-        if compare_fn is None:
-            continue
-        compare_fn(config)
 
 
 def evaluate_ablms(

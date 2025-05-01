@@ -31,11 +31,10 @@ def _combine_stats(paths):
     return combined
 
 
-def table_compare(config, **kwargs):
+def table_compare(results_dir, output_dir, task_str, **kwargs):
     # combine raw results files
-    results_dir = Path(config.output_dir) / "results"
-    files = list(results_dir.glob("*.csv"))
+    files = list(Path(results_dir).glob("*.csv"))
     combined_df = _combine_stats(files)
 
     # save
-    combined_df.to_csv(f"{config.output_dir}/combined-{config.task_dir}-results.csv")
+    combined_df.to_csv(f"{output_dir}/combined-{task_str}-results.csv")

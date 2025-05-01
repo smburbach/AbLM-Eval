@@ -93,6 +93,7 @@ def run_per_pos(
         # merge results with reference df
         combined = {
             "model_name": model_name,
+            "separator": config.separator,
             **{
                 k: v
                 for k, v in example.items()
