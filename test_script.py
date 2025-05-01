@@ -5,15 +5,17 @@ from ablm_eval import (
     MutationPredConfig,
     RoutingConfig,
     evaluate_ablms,
-    compare_results
+    compare_results,
+    compare_task
 )
 
 
 def main():
     # models
+    models_dir = "/home/jovyan/shared/Sarah/current/BALM-MoE/moe-optimization/expert-choice_capacity/models/"
     models = {
-        "ec_test": "/home/jovyan/shared/Sarah/current/BALM-MoE/moe-optimization/num_experts/models/BALM-MoE_45M-act_expertchoice_capacity1.0_4experts_lr1e-4_bs32-4xGPUs_swiglu_2025-04-21/",
-        "ec_test_2": "/home/jovyan/shared/Sarah/current/BALM-MoE/moe-optimization/num_experts/models/BALM-MoE_45M-act_expertchoice_capacity1.0_4experts_lr1e-4_bs32-4xGPUs_swiglu_2025-04-21/",
+        "ec_shared0": f"{models_dir}BALM-MoE_45M-act_expertchoice_capacity0.5_8experts-0shared-fixed_lr1e-4_bs32-4xGPUs_swiglu_2025-04-25/",
+        "ec_shared1": f"{models_dir}BALM-MoE_45M-act_expertchoice_capacity0.5_8experts-1shared-fixed_lr1e-4_bs32-4xGPUs_swiglu_2025-04-25/",
     }
     shared_output_dir = "./results"
 
@@ -33,7 +35,7 @@ def main():
         ),
         MutationPredConfig(
             data_path=f"{dir}paired-sep-1k-annotated.csv",
-            sequence_column="sequence_mutated" # or "sequence_germ"
+            sequence_column="sequence_germ" # "sequence_mutated" or "sequence_germ"
         ),
         ClassificationConfig(
             dataset_dir="/home/jovyan/shared/Sarah/current/curr-pMLM/eval/specificity-classification/data/TTE-5_HC/",
@@ -59,7 +61,12 @@ def main():
         generate_comparisons=True,
         ignore_existing_files=True,
     )
-    # compare_results(shared_output_dir)
+    # compare_results(output_dir=shared_output_dir)
+    # compare_task(
+    #     task_type="mutation_prediction",
+    #     task_results_dir="./results/mutation_prediction/results/",
+    #     output_dir="./results/mutation_prediction/"
+    # )
 
 
 if __name__ == "__main__":
