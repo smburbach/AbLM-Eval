@@ -21,12 +21,8 @@ class RoutingConfig:
         from ..tasks import run_routing_analysis
         return run_routing_analysis
 
-    @property
-    def comparer(self):
-        pass
-
     # required
-    routing_data: str
+    data_path: str
 
     # data processing
     sequence_column: Optional[str] = None

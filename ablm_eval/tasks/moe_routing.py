@@ -165,7 +165,7 @@ def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig
 
     # load & process dataset
     tokenized_dataset = load_and_tokenize(
-        data_path=config.routing_data,
+        data_path=config.data_path,
         tokenizer=tokenizer,
         config=config,
     )

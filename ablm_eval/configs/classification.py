@@ -21,11 +21,6 @@ class ClassificationConfig:
         from ..tasks import run_classification
         return run_classification
 
-    @property
-    def comparer(self):
-        from ..plots import table_compare
-        return table_compare
-
     # required
     dataset_dir: str
     file_prefix: str  # ie. 'hd-0_cov-1' for the file 'hd-0_cov-1_train{i}.csv'

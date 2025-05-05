@@ -18,7 +18,7 @@ def run_inference(model_name: str, model_path: str, config: InferenceConfig):
 
     # load & process dataset
     tokenized_dataset = load_and_tokenize(
-        data_path=config.inference_data,
+        data_path=config.data_path,
         tokenizer=tokenizer,
         config=config,
     )

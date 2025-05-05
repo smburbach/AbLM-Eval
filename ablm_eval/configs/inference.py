@@ -21,13 +21,8 @@ class InferenceConfig:
         from ..tasks import run_inference
         return run_inference
 
-    @property
-    def comparer(self):
-        from ..plots import table_compare
-        return table_compare
-
     # required
-    inference_data: str
+    data_path: str
 
     # data processing
     sequence_column: Optional[str] = None

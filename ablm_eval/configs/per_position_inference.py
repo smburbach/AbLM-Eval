@@ -21,11 +21,6 @@ class PerPositionConfig:
         from ..tasks import run_per_pos
         return run_per_pos
 
-    @property
-    def comparer(self):
-        from ..plots import per_pos_compare
-        return per_pos_compare
-
     # required
     data_path: str
 

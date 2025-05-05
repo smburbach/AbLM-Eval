@@ -21,11 +21,6 @@ class MutationPredConfig:
         from ..tasks import run_mutation_analysis
         return run_mutation_analysis
 
-    @property
-    def comparer(self):
-        from ..plots import mut_analysis_compare
-        return mut_analysis_compare
-
     # required
     data_path: str
     data_processed: bool = False
