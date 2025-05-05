@@ -151,6 +151,7 @@ def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig
     # load model & tokenizer
     model, tokenizer = load_model_and_tokenizer(model_path, task="mlm")
     model = model.to(device)
+    model.eval()
 
     # update keep_columns
     (config.keep_columns).extend(

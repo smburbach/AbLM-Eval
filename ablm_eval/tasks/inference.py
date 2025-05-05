@@ -15,6 +15,7 @@ def run_inference(model_name: str, model_path: str, config: InferenceConfig):
 
     # load model & tokenizer
     model, tokenizer = load_model_and_tokenizer(model_path, task="mlm")
+    model.eval()
 
     # load & process dataset
     tokenized_dataset = load_and_tokenize(

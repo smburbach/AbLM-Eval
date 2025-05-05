@@ -26,7 +26,7 @@ class MutationPredConfig:
     data_processed: bool = False
 
     # data processing
-    sequence_column: Optional[str] = "sequence_germline"
+    sequence_column: Optional[str] = "sequence_germ"
     heavy_column: Optional[str] = None
     light_column: Optional[str] = None
     separator: str = "<cls>"
