@@ -23,6 +23,7 @@ class InferenceConfig:
 
     # required
     data_path: str
+    dataset_name: str = "test"
 
     # data processing
     sequence_column: Optional[str] = None

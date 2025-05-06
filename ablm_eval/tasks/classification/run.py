@@ -26,9 +26,11 @@ def _set_wandb_vars(config: ClassificationConfig):
 def _merge_results(
     temp_dir: str,
     results_file: str,
+    dataset_name: str
 ):
     files = list(Path(temp_dir).glob("*.parquet"))
     merged_df = pd.concat([pd.read_parquet(f) for f in files])
+    merged_df['dataset'] = dataset_name
     merged_df = merged_df.sort_values("itr")
     merged_df.to_csv(results_file, index=False)
 
@@ -45,7 +47,7 @@ def run_classification(model_name: str, model_path: str, config: ClassificationC
     current_dir = os.path.dirname(os.path.abspath(__file__))
     script_path = os.path.join(current_dir, "training.py")
     config_path = (
-        f"{config.output_dir}/{config.classification_name}_accelerate_config.yaml"
+        f"{config.output_dir}/{config.dataset_name}_accelerate_config.yaml"
     )
     with open(config_path, "r") as f:
         accelerate_config = yaml.safe_load(f)
@@ -96,5 +98,5 @@ def run_classification(model_name: str, model_path: str, config: ClassificationC
                 gpu_pool.extend(released_gpus)
             processes.clear()
 
-        results_file = f"{config.output_dir}/results/{model_name}_{config.classification_name}_classification.csv"
-        _merge_results(temp_dir=temp_dir, results_file=results_file)
+        results_file = f"{config.output_dir}/results/{model_name}_{config.dataset_name}-classification.csv"
+        _merge_results(temp_dir=temp_dir, results_file=results_file, dataset_name=config.dataset_name)

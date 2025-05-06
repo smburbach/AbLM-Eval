@@ -190,7 +190,7 @@ def mut_analysis_compare(results_dir, output_dir, **kwargs):
     data = {}
     for file in Path(results_dir).glob("*mutation-analysis.parquet"):
         df = pd.read_parquet(file)
-        model_name = df["model_name"].iloc[0]
+        model_name = df["model"].iloc[0]
         data[model_name] = df
 
     # plot distribution of all predicted mutations

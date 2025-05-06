@@ -47,9 +47,11 @@ def run_inference(model_name: str, model_path: str, config: InferenceConfig):
     results = trainer.evaluate(tokenized_dataset)
     results["model"] = model_name
     results["model_path"] = model_path
+    results["dataset"] = config.dataset_name
 
     # save results
     results_df = pd.DataFrame([results])
+    data_name = f"{config.dataset_name}-" if config.dataset_name is not None else ""
     results_df.to_csv(
-        f"{config.output_dir}/results/{model_name}_inference.csv", index=False
+        f"{config.output_dir}/results/{model_name}_{data_name}inference.csv", index=False
     )

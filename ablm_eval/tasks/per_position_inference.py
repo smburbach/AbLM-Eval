@@ -92,7 +92,7 @@ def run_per_pos(
         )
         # merge results with reference df
         combined = {
-            "model_name": model_name,
+            "model": model_name,
             "separator": config.separator,
             **{
                 k: v
@@ -105,6 +105,7 @@ def run_per_pos(
 
     # save results
     df = pd.DataFrame(results)
+    data_name = f"{config.dataset_name}-" if config.dataset_name is not None else ""
     df.to_parquet(
-        f"{config.output_dir}/results/{model_name}_per-position-inference.parquet"
+        f"{config.output_dir}/results/{model_name}_{data_name}per-position-inference.parquet"
     )

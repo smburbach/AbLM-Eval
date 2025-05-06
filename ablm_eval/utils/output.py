@@ -78,4 +78,4 @@ def create_results_dir(output_dir: str, configs: list, ignore_existing: bool):
 
         # add accelerate config to classification task dir
         if isinstance(config, ClassificationConfig):
-            _override_accelerate_config(config.classification_name, task_path)
+            _override_accelerate_config(config.dataset_name, task_path)

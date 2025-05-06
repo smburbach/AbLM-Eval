@@ -1,4 +1,3 @@
-import torch
 import abutils
 import pandas as pd
 from tqdm import tqdm
@@ -8,8 +7,6 @@ from ..utils import load_reference_data
 from .per_position_inference import run_per_pos
 
 __all__ = ["run_mutation_analysis"]
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def _mutation_preprocessing(config):
@@ -98,7 +95,7 @@ def _analyze_row(row, separator: str):
     # return row
     return pd.Series(
         {
-            "model_name": row.model_name,
+            "model": row.model,
             "sequence_id": row.sequence_id,
             "total_mutations": num_mutations,
             "positions": positions,
@@ -173,10 +170,11 @@ def run_mutation_analysis(model_name: str, model_path: str, config: MutationPred
     run_per_pos(model_name, model_path, config)
 
     # load & process per position inference results
+    data_name = f"{config.dataset_name}-" if config.dataset_name is not None else ""
     results = load_reference_data(
-        f"{config.output_dir}/results/{model_name}_per-position-inference.parquet"
+        f"{config.output_dir}/results/{model_name}_{data_name}per-position-inference.parquet"
     )
     df = _process_per_pos_results(results, config.separator)
 
     # save processed results
-    df.to_parquet(f"{config.output_dir}/results/{model_name}_mutation-analysis.parquet")
+    df.to_parquet(f"{config.output_dir}/results/{model_name}_{data_name}mutation-analysis.parquet")

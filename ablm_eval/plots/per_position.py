@@ -46,7 +46,7 @@ def _region_processing(df):
     data = []
     for _, r in df.iterrows():
         mutated = bool(r["v_mutation_count_aa_heavy"] or r["v_mutation_count_aa_light"])
-        model = r["model_name"]
+        model = r["model"]
 
         # for both chains separately
         for chain in ["heavy", "light"]:

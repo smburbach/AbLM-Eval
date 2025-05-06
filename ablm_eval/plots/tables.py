@@ -2,20 +2,22 @@ from pathlib import Path
 
 import pandas as pd
 
+from ..utils import load_reference_data
+
 __all__ = ["table_compare"]
 
 
 def _combine_stats(paths):
     # read all results files and combine
-    df = pd.concat([pd.read_csv(path) for path in paths], ignore_index=True)
+    df = pd.concat([load_reference_data(path) for path in paths], ignore_index=True)
 
     # drop 'itr' col from classification tasks
     if "itr" in df.columns:
         df = df.drop(columns="itr")
 
     # get means and errors
-    means = df.groupby("model").mean(numeric_only=True)
-    sems = df.groupby("model").sem(numeric_only=True)
+    means = df.groupby(["model", "dataset"]).mean(numeric_only=True)
+    sems = df.groupby(["model", "dataset"]).sem(numeric_only=True)
 
     # exclude sem if it is None
     def format_value(mean, sem):
@@ -28,13 +30,19 @@ def _combine_stats(paths):
     for col in means.columns:
         combined[col] = means[col].combine(sems[col], format_value)
 
-    return combined
+    return df, combined
 
 
-def table_compare(results_dir, output_dir, task_str, **kwargs):
+def table_compare(
+    results_dir, output_dir, task_str, return_raw_data: bool = False, **kwargs
+):
     # combine raw results files
-    files = list(Path(results_dir).glob("*.csv"))
-    combined_df = _combine_stats(files)
+    extensions = [f"*{task_str}.csv", f"*{task_str}.parquet"]
+    files = [f for ext in extensions for f in Path(results_dir).glob(ext)]
+    raw_results, combined_df = _combine_stats(files)
 
     # save
     combined_df.to_csv(f"{output_dir}/combined-{task_str}-results.csv")
+
+    if return_raw_data:
+        return raw_results

@@ -23,6 +23,7 @@ class MutationPredConfig:
 
     # required
     data_path: str
+    dataset_name: str = None
     data_processed: bool = False
 
     # data processing

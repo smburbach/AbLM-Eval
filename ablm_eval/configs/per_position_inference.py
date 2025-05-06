@@ -23,7 +23,8 @@ class PerPositionConfig:
 
     # required
     data_path: str
-
+    dataset_name: str = None
+    
     # data processing
     sequence_column: Optional[str] = None
     heavy_column: Optional[str] = None

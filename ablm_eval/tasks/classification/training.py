@@ -56,7 +56,7 @@ def main(
 
     # run name
     if config.run_name is None:
-        run_name = f"{model_name}_{config.classification_name}_itr{fold_itr}_{date.today().isoformat()}"
+        run_name = f"{model_name}_{config.dataset_name}_itr{fold_itr}_{date.today().isoformat()}"
     else:
         run_name = f"{config.run_name}_itr{fold_itr}_{date.today().isoformat()}"
 

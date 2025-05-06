@@ -10,7 +10,7 @@ class ClassificationConfig:
 
     @property
     def task_dir(self):
-        return f"{self.classification_name}_classification"
+        return f"{self.dataset_name}_classification"
 
     @property
     def name(self):
@@ -24,7 +24,7 @@ class ClassificationConfig:
     # required
     dataset_dir: str
     file_prefix: str  # ie. 'hd-0_cov-1' for the file 'hd-0_cov-1_train{i}.csv'
-    classification_name: str
+    dataset_name: str
 
     # data processing
     sequence_column: Optional[str] = None
