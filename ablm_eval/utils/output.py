@@ -74,7 +74,7 @@ def create_results_dir(output_dir: str, configs: list, ignore_existing: bool):
 
         # save config
         with open(f"{task_path}/config.json", "w") as f:
-            json.dump(asdict(config), f, indent=2)   
+            json.dump(asdict(config), f, indent=2)
 
         # add accelerate config to classification task dir
         if isinstance(config, ClassificationConfig):

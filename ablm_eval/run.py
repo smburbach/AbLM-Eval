@@ -39,7 +39,7 @@ def compare_results(output_dir: str = None, configs: list = None):
     follows the directory structure created in `evaluate_ablms`.
     """
 
-    if bool(output_dir) == bool(configs): 
+    if bool(output_dir) == bool(configs):
         raise ValueError("Provide either `output_dir` or `configs`, but not both.")
 
     if output_dir:

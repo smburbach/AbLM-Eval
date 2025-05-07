@@ -68,7 +68,9 @@ def load_and_tokenize(
     drop_cols = [col for col in columns if col not in config.keep_columns]
 
     # tokenize
-    seq_column = config.sequence_column if config.sequence_column is not None else "sequence"
+    seq_column = (
+        config.sequence_column if config.sequence_column is not None else "sequence"
+    )
     tokenized_dataset = dataset.map(
         lambda x: tokenizer(
             x[seq_column],

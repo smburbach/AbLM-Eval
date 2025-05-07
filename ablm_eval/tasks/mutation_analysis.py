@@ -177,4 +177,6 @@ def run_mutation_analysis(model_name: str, model_path: str, config: MutationPred
     df = _process_per_pos_results(results, config.separator)
 
     # save processed results
-    df.to_parquet(f"{config.output_dir}/results/{model_name}_{data_name}mutation-analysis.parquet")
+    df.to_parquet(
+        f"{config.output_dir}/results/{model_name}_{data_name}mutation-analysis.parquet"
+    )

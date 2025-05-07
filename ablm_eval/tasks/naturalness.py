@@ -29,7 +29,7 @@ def _mean_log_prob(row, dataset):
     return pd.Series(
         {
             "model": row.model,
-            "dataset": dataset.replace('-', ''),
+            "dataset": dataset.replace("-", ""),
             "sequence_id": row.sequence_id,
             "log_likelihood": mean_log_prob,
             "pseudo_perplexity": pseudo_ppl,

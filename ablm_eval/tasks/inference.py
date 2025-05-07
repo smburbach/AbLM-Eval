@@ -53,5 +53,6 @@ def run_inference(model_name: str, model_path: str, config: InferenceConfig):
     results_df = pd.DataFrame([results])
     data_name = f"{config.dataset_name}-" if config.dataset_name is not None else ""
     results_df.to_csv(
-        f"{config.output_dir}/results/{model_name}_{data_name}inference.csv", index=False
+        f"{config.output_dir}/results/{model_name}_{data_name}inference.csv",
+        index=False,
     )

@@ -1,9 +1,5 @@
 from ablm_eval.configs import *
-from ablm_eval import (
-    evaluate_ablms,
-    compare_results,
-    compare_task
-)
+from ablm_eval import evaluate_ablms, compare_results, compare_task
 
 
 def main():
@@ -31,7 +27,7 @@ def main():
         ),
         MutationPredConfig(
             data_path=f"{dir}paired-sep-1k-annotated.csv",
-            sequence_column="sequence_mutated" # "sequence_mutated" or "sequence_germ"
+            sequence_column="sequence_mutated",  # "sequence_mutated" or "sequence_germ"
         ),
         ClassificationConfig(
             dataset_dir="/home/jovyan/shared/Sarah/current/curr-pMLM/eval/specificity-classification/data/TTE-5_HC/",
@@ -54,14 +50,14 @@ def main():
             dataset_name="IGoR",
             data_path=f"/home/jovyan/shared/Sarah/current/curr-pMLM/eval/log-likelihood/data/IGoR-10k_heavy_50%-naive.csv",
             sequence_column="sequence_aa",
-            separator=None, # unpaired sequences
+            separator=None,  # unpaired sequences
         ),
     ]
 
     evaluate_ablms(
-        models, 
-        configs, 
-        shared_output_dir, 
+        models,
+        configs,
+        shared_output_dir,
         generate_comparisons=True,
         ignore_existing_files=True,
     )

@@ -213,12 +213,12 @@ def routing_compare(results_dir, output_dir, **kwargs):
 
         summary_rows.append(row)
 
-    # convert to df
+    # convert to df & sort
     df = pd.DataFrame(summary_rows)
     df_sorted = df.sort_values("model")
 
     # plot CDRH3 summary
     _plot_region_layer_means(df_sorted, region="CDRH3", output_dir=output_dir)
 
-    # Save to CSV
+    # save
     df_sorted.to_csv(f"{output_dir}/routing_summary.csv", index=False)

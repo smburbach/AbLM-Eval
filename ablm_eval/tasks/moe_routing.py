@@ -86,11 +86,16 @@ def _process_outputs(test_data, config: RoutingConfig):
         )
 
         # sequence
-        seq = list('X' + getattr(row, config.heavy_column) + 'X' + getattr(row, config.heavy_column))
+        seq = list(
+            "X"
+            + getattr(row, config.heavy_column)
+            + "X"
+            + getattr(row, config.heavy_column)
+        )
         if len(seq) < config.max_len:
-            seq.extend(['X'] * (config.max_len - len(seq)))
+            seq.extend(["X"] * (config.max_len - len(seq)))
         else:
-            seq = seq[:config.max_len]
+            seq = seq[: config.max_len]
 
         # length data
         lengths.append({"sequence_id": sequence_id, **region_lengths})
@@ -180,8 +185,8 @@ def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig
 
     # process outputs
     extracted, length_reference = _process_outputs(data, config)
-    extracted['model'] =  model_name
-    length_reference['model'] = model_name
+    extracted["model"] = model_name
+    length_reference["model"] = model_name
 
     # save results
     extracted.to_parquet(

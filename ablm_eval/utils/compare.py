@@ -26,7 +26,7 @@ def _comparer_from_str(task_str: str):
 def _config_from_json(path: str):
     with open(path, "r") as f:
         config = json.load(f)
-    
+
     output_dir = config["output_dir"]
     return {
         "task_type": config["config_type"],
