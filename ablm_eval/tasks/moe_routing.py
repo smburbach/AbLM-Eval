@@ -180,6 +180,8 @@ def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig
 
     # process outputs
     extracted, length_reference = _process_outputs(data, config)
+    extracted['model'] =  model_name
+    length_reference['model'] = model_name
 
     # save results
     extracted.to_parquet(
@@ -188,5 +190,3 @@ def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig
     length_reference.to_parquet(
         f"{config.output_dir}/results/{model_name}_routing_length-reference.parquet"
     )
-
-    # TODO: plot results

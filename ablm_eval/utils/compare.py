@@ -8,7 +8,7 @@ CONFIG_COMPARER_REGISTRY: Dict[str, Type] = {
     "inference": table_compare,
     "per_pos_inference": per_pos_compare,
     "mutation_prediction": mut_analysis_compare,
-    "routing_analysis": None,
+    "routing_analysis": routing_compare,
     "naturalness": naturalness_compare,
 }
 
