@@ -18,7 +18,7 @@ class ClassificationConfig:
 
     @property
     def runner(self):
-        from ..tasks import run_classification
+        from .classification_run import run_classification
         return run_classification
 
     # required

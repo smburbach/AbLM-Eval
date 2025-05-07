@@ -18,7 +18,7 @@ class InferenceConfig:
 
     @property
     def runner(self):
-        from ..tasks import run_inference
+        from .inference_run import run_inference
         return run_inference
 
     # required

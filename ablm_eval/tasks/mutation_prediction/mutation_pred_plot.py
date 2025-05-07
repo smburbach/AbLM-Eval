@@ -2,10 +2,9 @@ from pathlib import Path
 
 import pandas as pd
 import numpy as np
-import seaborn as sns
 import matplotlib.pyplot as plt
 
-__all__ = ["mut_analysis_compare"]
+__all__ = ["mut_pred_compare"]
 
 
 def _filter_positions(dict, filter_column, filter_bool):
@@ -148,7 +147,7 @@ def _plot_match_ratios(ratio_dict, output_dir: str = None):
     )
 
 
-def mut_analysis_compare(results_dir, output_dir, **kwargs):
+def mut_pred_compare(results_dir, output_dir, **kwargs):
     # load results
     data = {}
     for file in Path(results_dir).glob("*mutation-analysis.parquet"):

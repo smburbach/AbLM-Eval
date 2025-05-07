@@ -3,8 +3,8 @@ from pathlib import Path
 import gc
 import torch
 
-from .utils.output import create_results_dir
-from .utils.compare import (
+from .utils.directories import create_results_dir
+from .tasks.compare_registry import (
     _config_from_json,
     _comparer_from_str,
 )

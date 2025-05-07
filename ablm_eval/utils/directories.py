@@ -5,9 +5,6 @@ import subprocess
 from importlib.resources import files
 from dataclasses import asdict
 
-from ..configs import ClassificationConfig
-from ..tasks import classification
-
 __all__ = ["create_results_dir"]
 
 
@@ -28,6 +25,8 @@ def _user_prompt(prompt: str) -> bool:
 
 
 def _override_accelerate_config(task_name: str, task_dir: pathlib.Path):
+    from ..tasks import classification
+
     # get default
     default_config_path = files(classification).joinpath(
         "default_accelerate_config.yaml"
@@ -77,5 +76,6 @@ def create_results_dir(output_dir: str, configs: list, ignore_existing: bool):
             json.dump(asdict(config), f, indent=2)
 
         # add accelerate config to classification task dir
+        from ..tasks import ClassificationConfig
         if isinstance(config, ClassificationConfig):
             _override_accelerate_config(config.dataset_name, task_path)

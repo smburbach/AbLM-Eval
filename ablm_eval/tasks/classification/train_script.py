@@ -10,7 +10,7 @@ from ablm_eval.utils import (
     load_and_tokenize,
     ComputeMetricsForSequenceClassification,
 )
-from ablm_eval.configs import ClassificationConfig
+from ablm_eval.tasks import ClassificationConfig
 
 
 def _parse_config(config_json):

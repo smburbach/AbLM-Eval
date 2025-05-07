@@ -18,7 +18,7 @@ class PerPositionConfig:
 
     @property
     def runner(self):
-        from ..tasks import run_per_pos
+        from .per_position_inference_run import run_per_pos
         return run_per_pos
 
     # required

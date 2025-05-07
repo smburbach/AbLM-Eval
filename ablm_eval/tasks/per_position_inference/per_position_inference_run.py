@@ -6,11 +6,10 @@ import torch.nn.functional as F
 import pandas as pd
 from tqdm import tqdm
 
-from ..utils import (
+from ...utils import (
     load_model_and_tokenizer,
     load_and_tokenize,
 )
-from ..configs import PerPositionConfig, MutationPredConfig
 
 __all__ = ["run_per_pos"]
 
@@ -67,7 +66,7 @@ def _inference_batched(model, tokenizer, input_ids):
 def run_per_pos(
     model_name: str,
     model_path: str,
-    config: Union[PerPositionConfig, MutationPredConfig],
+    config,
 ):
 
     # load model & tokenizer

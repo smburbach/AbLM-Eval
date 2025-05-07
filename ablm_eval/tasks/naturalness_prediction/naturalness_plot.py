@@ -1,11 +1,8 @@
-from pathlib import Path
-
 import pandas as pd
-import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from .tables import table_compare
+from ...utils.tables import table_compare
 
 __all__ = ["naturalness_compare"]
 

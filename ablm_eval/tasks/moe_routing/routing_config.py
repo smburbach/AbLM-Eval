@@ -18,7 +18,7 @@ class RoutingConfig:
 
     @property
     def runner(self):
-        from ..tasks import run_routing_analysis
+        from .routing_run import run_routing_analysis
         return run_routing_analysis
 
     # required

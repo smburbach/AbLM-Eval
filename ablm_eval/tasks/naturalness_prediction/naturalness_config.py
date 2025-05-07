@@ -1,16 +1,16 @@
 from dataclasses import dataclass, field
 from typing import Optional, Union
 
-__all__ = ["MutationPredConfig"]
+__all__ = ["NaturalnessConfig"]
 
 
 @dataclass
-class MutationPredConfig:
-    config_type: str = field(init=False, default="mutation_prediction")
+class NaturalnessConfig:
+    config_type: str = field(init=False, default="naturalness")
 
     @property
     def task_dir(self):
-        return "mutation_prediction"
+        return "naturalness"
 
     @property
     def name(self):
@@ -18,16 +18,15 @@ class MutationPredConfig:
 
     @property
     def runner(self):
-        from ..tasks import run_mutation_analysis
-        return run_mutation_analysis
+        from .naturalness_run import run_naturalness
+        return run_naturalness
 
     # required
     data_path: str
     dataset_name: str = None
-    data_processed: bool = False
 
     # data processing
-    sequence_column: Optional[str] = "sequence_germ"
+    sequence_column: Optional[str] = None
     heavy_column: Optional[str] = None
     light_column: Optional[str] = None
     separator: str = "<cls>"
@@ -41,10 +40,6 @@ class MutationPredConfig:
     keep_columns: list = field(
         default_factory=lambda: [
             "sequence_id",
-            "v_mutation_count_aa_heavy",
-            "v_mutation_count_aa_light",
-            "sequence_mutated",
-            "sequence_germ",
         ]
     )
 

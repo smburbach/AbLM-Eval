@@ -2,11 +2,11 @@ import abutils
 import pandas as pd
 from tqdm import tqdm
 
-from ..configs import MutationPredConfig
-from ..utils import load_reference_data
-from .per_position_inference import run_per_pos
+from .mutation_pred_config import MutationPredConfig
+from ...utils import load_reference_data
+from ..per_position_inference import run_per_pos
 
-__all__ = ["run_mutation_analysis"]
+__all__ = ["run_mutation_pred"]
 
 
 def _mutation_preprocessing(config):
@@ -160,7 +160,7 @@ def _process_per_pos_results(results: pd.DataFrame, separator: str):
     return results
 
 
-def run_mutation_analysis(model_name: str, model_path: str, config: MutationPredConfig):
+def run_mutation_pred(model_name: str, model_path: str, config: MutationPredConfig):
 
     # process data for mutation pred
     if not config.data_processed:

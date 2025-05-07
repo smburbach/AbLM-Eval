@@ -1,12 +1,12 @@
 import pandas as pd
 from transformers import TrainingArguments, Trainer, DataCollatorForLanguageModeling
 
-from ..utils import (
+from ...utils import (
     load_model_and_tokenizer,
     load_and_tokenize,
     ComputeMetricsForMaskedLM,
 )
-from ..configs import InferenceConfig
+from .inference_config import InferenceConfig
 
 __all__ = ["run_inference"]
 

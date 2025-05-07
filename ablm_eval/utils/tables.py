@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..utils import load_reference_data
+from .data import load_reference_data
 
 __all__ = ["table_compare"]
 

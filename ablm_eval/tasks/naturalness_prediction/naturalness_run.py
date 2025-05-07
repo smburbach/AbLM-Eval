@@ -1,11 +1,10 @@
 import torch
 import pandas as pd
 import numpy as np
-from tqdm import tqdm
 
-from ..configs import NaturalnessConfig
-from ..utils import load_reference_data
-from .per_position_inference import run_per_pos
+from .naturalness_config import NaturalnessConfig
+from ...utils import load_reference_data
+from ..per_position_inference import run_per_pos
 
 __all__ = ["run_naturalness"]
 

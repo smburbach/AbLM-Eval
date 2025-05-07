@@ -8,7 +8,7 @@ from pathlib import Path
 import torch
 import pandas as pd
 
-from ...configs import ClassificationConfig
+from .classification_config import ClassificationConfig
 
 __all__ = ["run_classification"]
 
@@ -45,7 +45,7 @@ def run_classification(model_name: str, model_path: str, config: ClassificationC
 
     # get training script path
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    script_path = os.path.join(current_dir, "training.py")
+    script_path = os.path.join(current_dir, "train_script.py")
     config_path = (
         f"{config.output_dir}/{config.dataset_name}_accelerate_config.yaml"
     )

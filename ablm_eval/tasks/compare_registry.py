@@ -1,16 +1,14 @@
 import json
 from typing import Dict, Type
 
-from ..plots import *
+CONFIG_COMPARER_REGISTRY: Dict[str, Type] = {}
 
-CONFIG_COMPARER_REGISTRY: Dict[str, Type] = {
-    "classification": table_compare,
-    "inference": table_compare,
-    "per_pos_inference": per_pos_compare,
-    "mutation_prediction": mut_analysis_compare,
-    "routing_analysis": routing_compare,
-    "naturalness": naturalness_compare,
-}
+
+def register_comparer(task_name: str, comparer_func: Type):
+    """
+    Registers a comparer function for a specific task.
+    """
+    CONFIG_COMPARER_REGISTRY[task_name] = comparer_func
 
 
 def _comparer_from_str(task_str: str):

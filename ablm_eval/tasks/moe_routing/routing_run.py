@@ -2,12 +2,12 @@ from tqdm import tqdm
 import pandas as pd
 import torch
 
-from ..utils import (
+from ...utils import (
     load_model_and_tokenizer,
     load_and_tokenize,
     move_to_cpu,
 )
-from ..configs import RoutingConfig
+from .routing_config import RoutingConfig
 
 __all__ = ["run_routing_analysis"]
 
