@@ -155,6 +155,33 @@ def _per_pos_boxenplot(
     )
 
 
+def _summary_df(df):
+    # filter for CDR3 only
+    cdr3_df = df[(df["region"] == "CDR3") & (df["chain"] ==  "heavy")].drop(columns="mean_loss")
+
+    # group by model, chain, mutated
+    means = cdr3_df.groupby(['model', 'mutated']).median(numeric_only=True)
+    sems = cdr3_df.groupby(['model', 'mutated']).sem(numeric_only=True)
+
+    # format mean ± sem
+    def format_value(mean, sem):
+        if pd.notna(sem):
+            return f"{mean:.4f} (± {sem:.4f})"
+        return f"{mean:.4f}"
+
+    # combine
+    combined = pd.DataFrame(index=means.index)
+    for col in means.columns:
+        combined[f"CDRH3_{col}"] = means[col].combine(sems[col], format_value)
+
+    # make model & mutated columns non-index cols
+    combined = combined.reset_index()
+
+    # sort
+    combined = combined.sort_values(by=['model', 'mutated'])
+    return combined
+
+
 def per_pos_compare(results_dir, output_dir, task_str, **kwargs):
     # load & concat results
     files = list(Path(results_dir).glob("*.parquet"))
@@ -176,3 +203,6 @@ def per_pos_compare(results_dir, output_dir, task_str, **kwargs):
                 task_str=task_str,
                 plot_desc=f"{'mutated' if mutated else 'unmutated'}_{metric}",
             )
+
+    summary_df = _summary_df(data_df)
+    summary_df.to_csv(f"{output_dir}/results-summary_{task_str}.csv", index=False)
