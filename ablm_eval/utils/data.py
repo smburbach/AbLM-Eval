@@ -1,5 +1,5 @@
 import os
-from typing import Union
+from typing import Union, Optional
 
 import torch
 import pandas as pd
@@ -19,7 +19,7 @@ def move_to_cpu(obj):
     return obj
 
 
-def load_reference_data(path: str, keep_columns: list = None) -> pd.DataFrame:
+def load_reference_data(path: str, keep_columns: Optional[list] = None) -> pd.DataFrame:
     ext = os.path.splitext(path)[1].lower()
     if ext == ".parquet":
         df = pd.read_parquet(path)
