@@ -98,7 +98,7 @@ def _multi_region_heatmap(
 
         # plot
         sns.heatmap(
-            heatmap_data, annot=False, fmt=".1f", cmap="Blues", cbar=True, ax=axes[i]
+            heatmap_data, annot=True, fmt=".1f", cmap="Blues", cbar=True, ax=axes[i]
         )
         axes[i].set_title(f"{region} (mean={mean_region:.1f}%)")
         axes[i].set_xlabel("Expert ID")

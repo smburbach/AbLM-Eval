@@ -150,6 +150,17 @@ def _inference(model, tokenized_dataset) -> list:
             outputs.append(move_to_cpu(output))
     return outputs
 
+def _tensor_to_python(obj):
+    if isinstance(obj, torch.Tensor):
+        return obj.item() if obj.ndim == 0 else obj.tolist()
+    elif isinstance(obj, dict):
+        return {k: _tensor_to_python(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_tensor_to_python(i) for i in obj]
+    elif isinstance(obj, tuple):
+        return tuple(_tensor_to_python(i) for i in obj)
+    else:
+        return obj
 
 def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig):
 
@@ -188,7 +199,12 @@ def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig
     extracted["model"] = model_name
     length_reference["model"] = model_name
 
-    # save results
+    # save raw results
+    data["balmmoe_output"] = data["balmmoe_output"].apply(_tensor_to_python)
+    data.to_parquet(
+        f"{config.output_dir}/results/{model_name}_raw-outputs.parquet"
+    )
+    # save processed results
     extracted.to_parquet(
         f"{config.output_dir}/results/{model_name}_routing_results.parquet"
     )
