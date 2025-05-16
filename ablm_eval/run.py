@@ -1,10 +1,11 @@
+import gc
+from typing import Optional
 from pathlib import Path
 
-import gc
 import torch
 
-from .utils.output import create_results_dir
-from .utils.compare import (
+from .utils.directories import create_results_dir
+from .tasks.compare_registry import (
     _config_from_json,
     _comparer_from_str,
 )
@@ -17,9 +18,11 @@ UNDERLINE = "\033[4m"
 RESET = "\033[0m"
 
 
-def compare_task(task_type: str, task_results_dir: str, output_dir: str = None):
+def compare_task(
+    task_type: str, task_results_dir: str, output_dir: Optional[str] = None
+):
     """
-    Compare task results in a given output directory.
+    Compare the results of a single task, in the provided output directory.
     """
     # get compare fn
     compare_fn = _comparer_from_str(task_type)
@@ -33,13 +36,13 @@ def compare_task(task_type: str, task_results_dir: str, output_dir: str = None):
     compare_fn(results_dir=task_results_dir, output_dir=output_dir, task_str=task_type)
 
 
-def compare_results(output_dir: str = None, configs: list = None):
+def compare_results(output_dir: Optional[str] = None, configs: Optional[list] = None):
     """
     Compare model results in a given output directory, assuming this directory
     follows the directory structure created in `evaluate_ablms`.
     """
 
-    if bool(output_dir) == bool(configs): 
+    if bool(output_dir) == bool(configs):
         raise ValueError("Provide either `output_dir` or `configs`, but not both.")
 
     if output_dir:
@@ -48,7 +51,7 @@ def compare_results(output_dir: str = None, configs: list = None):
                 config_path = folder / "config.json"
                 if config_path.exists():
                     # extract info from config
-                    config = _config_from_json(config_path)
+                    config = _config_from_json(str(config_path))
 
                     # run comparison
                     compare_task(
@@ -92,7 +95,7 @@ def evaluate_ablms(
 ):
     """
     Evaluate (and optionally compare) the provided models on the
-    given task configs.
+    given tasks.
     """
 
     # create output dirs

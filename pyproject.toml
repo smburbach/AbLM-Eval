@@ -2,6 +2,7 @@
 name = "ablm-eval"
 version = "0.0.0"
 authors = [{name = "Sarah Burbach"}]
+requires-python = ">=3.10"
 
 [build-system]
 requires = ["setuptools>=61", "wheel"]
