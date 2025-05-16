@@ -1,0 +1,15 @@
+abutils
+accelerate
+deepspeed
+matplotlib
+numpy<2
+pandas
+pyarrow
+pyyaml
+scikit-learn
+seaborn
+torch
+transformers
+tqdm
+wandb
+git+https://github.com/brineylab/BALM.git@main#egg=balm-antibody
