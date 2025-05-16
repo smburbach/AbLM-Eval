@@ -1,7 +1,7 @@
+import gc
 from typing import Optional
 from pathlib import Path
 
-import gc
 import torch
 
 from .utils.directories import create_results_dir
