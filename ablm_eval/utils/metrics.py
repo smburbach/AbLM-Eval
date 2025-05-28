@@ -23,27 +23,19 @@ class ComputeMetricsBase:
     """
 
     def __init__(self):
-        self.lm_loss = None
-        self.z_loss = None
-        self.aux_loss = None
+        self.moe_losses = {}
 
     def _process_eval_preds(
         self, eval_preds: EvalPrediction, return_moe_losses: bool = False
     ) -> None:
         logits, labels = eval_preds
         if isinstance(logits, tuple):
-            if return_moe_losses:  # extract moe losses if present
-                # top k
-                if len(logits) == 4:
-                    _, z_loss, aux_loss, lm_loss = logits
-                    self.aux_loss = aux_loss.mean()
-                # expert choice
-                elif len(logits) == 3:
-                    _, z_loss, lm_loss = logits
-
-                self.lm_loss = lm_loss.mean()
-                self.z_loss = z_loss.mean()
-
+            if return_moe_losses:
+                # moe_losses dict is the final element of the tuple
+                moe_losses = logits[-1]
+                if isinstance(moe_losses, dict):
+                    for k, v in moe_losses.items():
+                        self.moe_losses[k] = v.mean()
             logits = logits[0]  # logits is the first element of the tuple
 
         # convert to tensors
@@ -80,15 +72,14 @@ class ComputeMetricsForMaskedLM(ComputeMetricsBase):
         self.labels = self.labels[mask]
         self.predictions = self.predictions[mask]
 
-        return self._filter_none(
-            {
-                "accuracy": self.accuracy(),
-                "perplexity": self.perplexity(),
-                "mlm_loss": self.lm_loss,
-                "z_loss": self.z_loss,
-                "aux_loss": self.aux_loss,
-            }
-        )
+        # collect metrics
+        metrics = {
+            "accuracy": self.accuracy(),
+            "perplexity": self.perplexity(),
+        }
+        metrics.update(self.moe_losses)
+
+        return self._filter_none(metrics)
 
     def perplexity(self):
         ce_loss = F.cross_entropy(
