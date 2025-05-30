@@ -74,17 +74,29 @@ def run_classification(model_name: str, model_path: str, config: ClassificationC
                 )
                 visible_devices = ",".join(str(gpu) for gpu in assigned_gpus)
 
-                command = [
-                    "accelerate", "launch",
-                    "--main_process_port", str(port),
-                    "--config_file", config_path,
-                    script_path,
-                    "--fold_itr", str(fold),
-                    "--temp_dir", str(temp_dir),
-                    "--config", config_json,
-                    "--model_name", model_name,
-                    "--model_path", model_path,
-                ]
+                if config.launcher == "accelerate":
+                    command = [
+                        "accelerate", "launch",
+                        "--main_process_port", str(port),
+                        "--config_file", config_path,
+                        script_path,
+                        "--fold_itr", str(fold),
+                        "--temp_dir", str(temp_dir),
+                        "--config", config_json,
+                        "--model_name", model_name,
+                        "--model_path", model_path,
+                    ]
+                elif config.launcher == "python":
+                    command = [
+                        "python", script_path,
+                        "--fold_itr", str(fold),
+                        "--temp_dir", str(temp_dir),
+                        "--config", config_json,
+                        "--model_name", model_name,
+                        "--model_path", model_path,
+                    ]
+                else:
+                    raise ValueError("Launcher must be either 'python' or 'accelerate'.")
                 p = subprocess.Popen(
                     command, env={**os.environ, "CUDA_VISIBLE_DEVICES": visible_devices}
                 )

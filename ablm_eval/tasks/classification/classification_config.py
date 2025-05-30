@@ -135,6 +135,7 @@ class ClassificationConfig:
     separator: str = "<cls>"
 
     # classification details
+    launcher: str = "accelerate" # or "python"
     num_folds: int = 5
     num_classes: int = 2
     multi_class_average: str = "macro"  # only used in num_classes > 2
