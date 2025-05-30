@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, Union
+from typing import Optional, Union, Literal
 
 __all__ = ["ClassificationConfig"]
 
@@ -29,11 +29,13 @@ class ClassificationConfig:
         Either `sequence_column` or both `heavy_column` and `light_column` must be provided.
     separator : str, default=`<cls>`
         Separator token for paired sequences.
+    launcher : {"accelerate", "python"}, default="accelerate"
+        Launcher to use to train classification models.
     num_folds : int, default=5
         Number of folds for cross-validation.
     num_classes : int, default=2
         Number of classes for classification.
-    multi_class_average : str, default="macro"
+    multi_class_average : {"macro", "micro"}, default="macro"
         Averaging method for multi-class classification metrics. Used only when `num_classes > 2`.
     positive_label : int, default=1
         Label considered as positive for binary classification.
@@ -135,10 +137,10 @@ class ClassificationConfig:
     separator: str = "<cls>"
 
     # classification details
-    launcher: str = "accelerate" # or "python"
+    launcher: Literal["accelerate", "python"] = "accelerate" # or "python"
     num_folds: int = 5
     num_classes: int = 2
-    multi_class_average: str = "macro"  # only used in num_classes > 2
+    multi_class_average: Literal["macro", "micro"] = "macro"  # only used in num_classes > 2
     positive_label: int = 1
     attention_classifier: bool = True  # extra model arg
     manually_freeze_base: bool = False  # balm handles by default
