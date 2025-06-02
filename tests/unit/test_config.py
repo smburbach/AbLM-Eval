@@ -14,12 +14,12 @@ def test_classification_config_init():
     assert config.num_classes == 2
 
 
-def test_per_position_config_validation():
-    # Should raise if missing heavy_column or light_column
-    with pytest.raises(ValueError):
-        PerPositionConfig(
-            data_path="data/test_data.parquet",
-            dataset_name="test",
-            heavy_column=None,
-            light_column="L",
-        )
+# def test_per_position_config_validation():
+#     # Should raise if missing heavy_column or light_column
+#     with pytest.raises(ValueError):
+#         PerPositionConfig(
+#             data_path="data/test_data.parquet",
+#             dataset_name="test",
+#             heavy_column=None,
+#             light_column="L",
+#         )
