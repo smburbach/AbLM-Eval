@@ -18,8 +18,7 @@ def test_per_position_config_validation():
     # Should raise if missing heavy_column or light_column
     with pytest.raises(ValueError):
         PerPositionConfig(
-            dataset_dir="data/",
-            file_prefix="prefix",
+            data_path="data/test_data.parquet",
             dataset_name="test",
             heavy_column=None,
             light_column="L",
