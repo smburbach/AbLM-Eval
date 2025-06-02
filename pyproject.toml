@@ -1,14 +1,48 @@
-[project]
-name = "ablm-eval"
-version = "0.0.0"
-authors = [{name = "Sarah Burbach"}]
-requires-python = ">=3.10"
-
 [build-system]
 requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "ablm-eval"
+version = "0.0.0"
+readme = "README.md"
+authors = [{name = "Sarah Burbach"}]
+license = { file = "LICENSE" }
+dependencies = [
+    "abutils",
+    "accelerate",
+    "deepspeed",
+    "matplotlib",
+    "numpy<2",
+    "pandas",
+    "pyarrow",
+    "pyyaml",
+    "scikit-learn",
+    "seaborn",
+    "torch",
+    "transformers",
+    "tqdm",
+    "wandb",
+    "balm-antibody @ git+https://github.com/brineylab/BALM.git@main"
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Bio-Informatics"
+]
+
+[project.urls]
+Homepage = "https://github.com/smburbach/AbLM-Eval"
+
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["ablm_eval*"]
 
 [tool.setuptools.package-data]
