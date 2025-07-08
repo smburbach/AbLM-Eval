@@ -162,8 +162,8 @@ class ClassificationConfig:
     # training args
     run_name: str = None
     seed: int = 42
-    bf16: bool = True
-    fp16: bool = False
+    bf16: bool = False
+    fp16: bool = True
     learning_rate: float = 1e-4
     train_batch_size: int = 32
     epochs: int = 3
