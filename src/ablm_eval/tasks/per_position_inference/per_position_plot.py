@@ -11,63 +11,110 @@ __all__ = ["per_pos_compare"]
 REGIONS = ["FR1", "CDR1", "FR2", "CDR2", "FR3", "CDR3", "FR4"]
 
 
-def _extract(df):
-    h_loss = []
-    l_loss = []
-    h_pred = []
-    l_pred = []
-    h_seq = []
-    l_seq = []
+def per_pos_compare(results_dir, output_dir, task_str, **kwargs):
+    # load & concat results
+    files = list(Path(results_dir).glob("*.parquet"))
+    results = pd.concat([pd.read_parquet(file) for file in files], ignore_index=True)
+
+    # return if CDR masks are not provided
+    dataset_columns = results["dataset_columns"].iloc[0]
+    if dataset_columns["cdr_columns"] is None:
+        print("CDR columns not provided; skipping per-position comparison.")
+        return
+
+    # process results
+    results = _extract(results, dataset_columns)
+    data = _process_regions(results, dataset_columns)
+    data_df = pd.DataFrame(data)
+
+    # plots
+    for mutated in sorted(data_df["mutated"].unique(), key=lambda x: (str(x))):
+        df = data_df[(data_df["mutated"] == mutated)]
+        for metric in ["median_loss", "accuracy"]:
+            _per_pos_boxenplot(
+                df,
+                y_axis=metric,
+                output_dir=output_dir,
+                task_str=task_str,
+                plot_desc=f"{mutated}_{metric}",
+            )
+
+    # summary df
+    _summary_df(data_df, output_dir=output_dir, task_str=task_str)
+
+
+def _extract(df: pd.DataFrame, dataset_columns: dict) -> pd.DataFrame:
+    """Split concatenated sequence/loss/prediction into per-chain columns."""
+    chains = dataset_columns["chain_names"]
+    new_cols = {
+        f"{chain}_{col}": [] for chain in chains for col in ["loss", "pred", "sequence"]
+    }
 
     for _, r in df.iterrows():
-        hlen = len(r["cdr_mask_heavy"])
         sep = r["separator"]
-        seplen = sep.count("<")
+        seqs = r["sequence"].split(sep)
+        losses = r["loss"]
+        preds = r["prediction"]
 
-        h_loss.append(r["loss"][:hlen])
-        l_loss.append(r["loss"][(hlen + seplen) :])
-        h_pred.append(r["prediction"][:hlen])
-        l_pred.append(r["prediction"][(hlen + seplen) :])
-        h_seq.append(r["sequence"].split(sep)[0])
-        l_seq.append(r["sequence"].split(sep)[1])
+        start = 0
+        for chain, seq in zip(chains, seqs):
+            # determine end idx based on chain length
+            end = start + len(seq)
 
-    df["heavy_loss"] = h_loss
-    df["light_loss"] = l_loss
-    df["heavy_pred"] = h_pred
-    df["light_pred"] = l_pred
-    df["heavy_sequence"] = h_seq
-    df["light_sequence"] = l_seq
+            # extract
+            new_cols[f"{chain}_loss"].append(losses[start:end])
+            new_cols[f"{chain}_pred"].append(preds[start:end])
+            new_cols[f"{chain}_sequence"].append(list(seq))
 
-    return df
+            # update start idx
+            start = end + 1
+
+    return df.assign(**new_cols)
 
 
-def _region_processing(df):
+def _process_regions(df: pd.DataFrame, dataset_columns: dict):
+    """Processes each chain one at time, by region"""
+
+    # get dataset columns
+    chains = dataset_columns["chain_names"]
+    cdr_cols = dataset_columns["cdr_columns"]
+    mut_cols = dataset_columns["mutation_columns"]
+
+    def get_mutation_status(mut_val):
+        if mut_val is None or pd.isna(mut_val):
+            return "mutation_unknown"
+        return "mutated" if mut_val else "unmutated"
 
     data = []
-    for _, r in df.iterrows():
-        mutated = bool(r["v_mutation_count_aa_heavy"] or r["v_mutation_count_aa_light"])
-        model = r["model"]
+    # loop through rows
+    for _, row in df.iterrows():
 
-        # for both chains separately
-        for chain in ["heavy", "light"]:
-            loss = r[f"{chain}_loss"]
-            pred = r[f"{chain}_pred"]
-            seq = list(r[f"{chain}_sequence"])
-            cdr_mask = r[f"cdr_mask_{chain}"]
+        mutated_flags = [get_mutation_status(row.get(col, None)) for col in mut_cols]
 
-            # find regions
+        # loop through chains
+        for i, chain in enumerate(chains):
+            loss = row[f"{chain}_loss"]
+            pred = row[f"{chain}_pred"]
+            seq = row[f"{chain}_sequence"]
+            cdr_mask = row[cdr_cols[i]]
+            locus = (
+                chain
+                if row["antibody_datatype"] == "paired"
+                else row.get("locus", chain)
+            )
+
+            # segment regions
             mask_segments = []
             prev_char = cdr_mask[0]
-            start_idx = 0
-
-            for i, char in enumerate(cdr_mask):
-                if char != prev_char:  # region change
-                    mask_segments.append((start_idx, i))
-                    start_idx = i
+            start = 0
+            for j, char in enumerate(cdr_mask):
+                if char != prev_char:
+                    mask_segments.append((start, j))
+                    start = j
                 prev_char = char
-            mask_segments.append((start_idx, len(cdr_mask)))  # final region
+            mask_segments.append((start, len(cdr_mask)))
 
-            # skip any sequences w/o 6 CDRs
+            # skip any sequences w/o 7 regions
             if len(mask_segments) != len(REGIONS):
                 continue
 
@@ -76,22 +123,19 @@ def _region_processing(df):
                 region_loss = loss[start:end]
                 region_pred = pred[start:end]
                 region_seq = seq[start:end]
-
                 data.append(
                     {
                         "region": region,
-                        "model": model,
-                        "chain": chain,
-                        "mutated": mutated,
+                        "model": row["model"],
+                        "chain": locus,
+                        "mutated": mutated_flags[i],
                         "loss": region_loss,
-                        "mean_loss": np.mean(region_loss),
                         "median_loss": np.median(region_loss),
                         "accuracy": np.mean(
                             [p == t for p, t in zip(region_pred, region_seq)]
                         ),
                     }
                 )
-
     return data
 
 
@@ -102,14 +146,20 @@ def _per_pos_boxenplot(
     task_str: str,
     plot_desc: str,
 ):
-    fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
-
+    # chains & model order
+    chains = sorted(df["chain"].unique())
+    n_chains = len(chains)
     model_order = sorted(df["model"].unique())
 
-    for i, chain in enumerate(["heavy", "light"]):
+    # create figure
+    fig, axes = plt.subplots(n_chains, 1, figsize=(8, 3 * n_chains), sharex=True)
+    if n_chains == 1:
+        axes = [axes]
+
+    for ax, chain in zip(axes, chains):
         # boxplot
         sns.boxenplot(
-            data=df[(df["chain"] == chain)],
+            data=df[df["chain"] == chain],
             x="region",
             y=y_axis,
             hue="model",
@@ -120,24 +170,20 @@ def _per_pos_boxenplot(
             outlier_prop=0.1,
             width=0.7,
             saturation=1,
-            ax=ax[i],
+            ax=ax,
         )
 
-        # ticks
-        ax[i].tick_params(axis="x", labelsize=11)
-
-        # labels
-        ax[i].set_xlabel("")
-        ax[i].set_ylabel(
+        # ticks, labels, & legend
+        ax.tick_params(axis="x", labelsize=11)
+        ax.set_xlabel("")
+        ax.set_ylabel(
             f"{chain.title()} Chain \n Per-position {y_axis.replace('_', ' ').title()}",
             fontsize=12,
         )
-
-        # remove legends
-        ax[i].get_legend().remove()
+        ax.get_legend().remove()
 
     # legend
-    handles, labels = ax[1].get_legend_handles_labels()
+    handles, labels = axes[-1].get_legend_handles_labels()
     fig.legend(
         handles,
         labels,
@@ -155,54 +201,33 @@ def _per_pos_boxenplot(
     )
 
 
-def _summary_df(df):
+def _summary_df(
+    df: pd.DataFrame,
+    output_dir: str,
+    task_str: str,
+):
+    """Summary metrics for CDRH3 only."""
     # filter for CDR3 only
-    cdr3_df = df[(df["region"] == "CDR3") & (df["chain"] ==  "heavy")].drop(columns="mean_loss")
+    cdr3_df = df[(df["region"] == "CDR3") & (df["chain"].str.lower() == "heavy")]
+    if cdr3_df.empty:
+        return
 
     # group by model, chain, mutated
-    means = cdr3_df.groupby(['model', 'mutated']).median(numeric_only=True)
-    sems = cdr3_df.groupby(['model', 'mutated']).sem(numeric_only=True)
+    means = cdr3_df.groupby(["model", "mutated"]).median(numeric_only=True)
+    sems = cdr3_df.groupby(["model", "mutated"]).sem(numeric_only=True)
 
     # format mean ± sem
     def format_value(mean, sem):
-        if pd.notna(sem):
-            return f"{mean:.4f} (± {sem:.4f})"
-        return f"{mean:.4f}"
+        return f"{mean:.4f} (± {sem:.4f})" if pd.notna(sem) else f"{mean:.4f}"
 
     # combine
     combined = pd.DataFrame(index=means.index)
     for col in means.columns:
         combined[f"CDRH3_{col}"] = means[col].combine(sems[col], format_value)
 
-    # make model & mutated columns non-index cols
+    # make model & mutated columns non-index cols, then sort
     combined = combined.reset_index()
+    combined = combined.sort_values(by=["model", "mutated"])
 
-    # sort
-    combined = combined.sort_values(by=['model', 'mutated'])
-    return combined
-
-
-def per_pos_compare(results_dir, output_dir, task_str, **kwargs):
-    # load & concat results
-    files = list(Path(results_dir).glob("*.parquet"))
-    results = pd.concat([pd.read_parquet(file) for file in files], ignore_index=True)
-
-    # process results
-    results = _extract(results)
-    data = _region_processing(results)
-    data_df = pd.DataFrame(data)
-
-    # plots
-    for mutated in [True, False]:
-        df = data_df[(data_df["mutated"] == mutated)]
-        for metric in ["median_loss", "accuracy"]:
-            _per_pos_boxenplot(
-                df,
-                y_axis=metric,
-                output_dir=output_dir,
-                task_str=task_str,
-                plot_desc=f"{'mutated' if mutated else 'unmutated'}_{metric}",
-            )
-
-    summary_df = _summary_df(data_df)
-    summary_df.to_csv(f"{output_dir}/results-summary_{task_str}.csv", index=False)
+    # save
+    combined.to_csv(f"{output_dir}/results-summary_{task_str}.csv", index=False)

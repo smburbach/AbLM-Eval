@@ -90,6 +90,8 @@ def run_per_pos(
         # merge results with reference df
         combined = {
             "model": model_name,
+            "antibody_datatype": config.antibody_datatype,
+            "dataset_columns": config.dataset_columns.to_dict(),
             "separator": config.separator,
             **{
                 k: v
