@@ -100,7 +100,7 @@ def _process_regions(df: pd.DataFrame, dataset_columns: dict):
             locus = (
                 chain
                 if row["antibody_datatype"] == "paired"
-                else row.get("locus", chain)
+                else row.get(dataset_columns["locus_column"], chain)
             )
 
             # segment regions
@@ -208,7 +208,9 @@ def _summary_df(
 ):
     """Summary metrics for CDRH3 only."""
     # filter for CDR3 only
-    cdr3_df = df[(df["region"] == "CDR3") & (df["chain"].str.lower() == "heavy")]
+    cdr3_df = df[
+        (df["region"] == "CDR3") & (df["chain"].str.lower().isin(["heavy", "h"]))
+    ]
     if cdr3_df.empty:
         return
 

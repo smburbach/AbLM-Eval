@@ -24,7 +24,8 @@ class DatasetColumns:
         Column names tracking the mutation counts for each chain.
     id_column : str, default="sequence_id"
         Identifier column name.
-
+    locus_column: str, optional
+        Column name containting the locus information for unpaired sequences.
     Methods
     -------
     apply_defaults(datatype)
@@ -38,6 +39,7 @@ class DatasetColumns:
     cdr_columns: Optional[List[str]] = None
     mutation_columns: Optional[List[str]] = None
     id_column: Optional[str] = "sequence_id"
+    locus_column: Optional[str] = None
 
     def apply_defaults(self, datatype: Literal["paired", "unpaired"]):
         # default values
@@ -56,6 +58,7 @@ class DatasetColumns:
                 "chain_columns": ["sequence_aa"],
                 "cdr_columns": ["cdr_mask"],
                 "mutation_columns": ["v_mutation_count_aa"],
+                "locus_column": "locus",
             },
         }
 
