@@ -36,31 +36,27 @@ def load_reference_data(path: str, keep_columns: Optional[list] = None) -> pd.Da
 
 def _generate_sequence(dataset, column_names, config):
 
-    seq_column = config.sequence_column
-    h_column = config.heavy_column
-    l_column = config.light_column
+    # extract column and seperator info
+    dataset_columns = config.dataset_columns
+    n_chains = len(dataset_columns.chain_names)
+    chain_columns = dataset_columns.chain_columns
+    separator = config.separator
 
-    if (h_column and l_column) and not seq_column:
-        if (h_column in column_names) and (l_column in column_names):
-            # concat heavy and light sequences to create 'sequence' column
-            dataset = dataset.map(
-                lambda x: {
-                    "sequence": "".join(x[h_column])
-                    + config.separator
-                    + "".join(x[l_column])
-                },
-            )
-        else:
-            raise ValueError(
-                f"Both columns {h_column} and {l_column} must exist in the dataset."
-            )
-    elif seq_column and not (h_column or l_column):
-        if seq_column not in column_names:
-            raise ValueError(f"The column {seq_column} must exist in the dataset.")
-    else:
-        raise ValueError(
-            "Please provide either the 'sequence_column' or both the 'heavy_column' and 'light_column'."
+    for col in chain_columns:
+        if col not in column_names:
+            raise ValueError(f"The column {col} must exist in the dataset.")
+    
+    if n_chains == 1:
+        dataset = dataset.map(
+            lambda x: {"sequence": x[chain_columns[0]]}
         )
+    else:
+        def concat_chains(x):
+            seqs = [x[col] for col in chain_columns]
+            return {"sequence": separator.join(seqs)}
+        
+        # concat chains with seperator
+        dataset = dataset.map(concat_chains)
 
     return dataset
 
@@ -93,12 +89,9 @@ def load_and_tokenize(
     drop_cols = [col for col in columns if col not in config.keep_columns]
 
     # tokenize
-    seq_column = (
-        config.sequence_column if config.sequence_column is not None else "sequence"
-    )
     tokenized_dataset = dataset.map(
         lambda x: tokenizer(
-            x[seq_column],
+            x["sequence"],
             padding=config.padding,
             max_length=config.max_len,
             truncation=config.truncate,
