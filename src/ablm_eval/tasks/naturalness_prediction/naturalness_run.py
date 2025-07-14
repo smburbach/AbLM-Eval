@@ -9,6 +9,26 @@ from ..per_position_inference import run_per_pos
 __all__ = ["run_naturalness"]
 
 
+def run_naturalness(model_name: str, model_path: str, config: NaturalnessConfig):
+
+    # run per position inference
+    run_per_pos(model_name, model_path, config)
+
+    # load per position inference results
+    data_name = f"{config.dataset_name}-" if config.dataset_name is not None else ""
+    results = load_reference_data(
+        f"{config.output_dir}/results/{model_name}_{data_name}per-position-inference.parquet"
+    )
+
+    # process
+    df = results.apply(_mean_log_prob, dataset=data_name, axis=1)
+
+    # save processed results
+    df.to_parquet(
+        f"{config.output_dir}/results/{model_name}_{data_name}naturalness.parquet"
+    )
+
+
 def _mean_log_prob(row, dataset):
 
     seq_log_probs = []
@@ -34,24 +54,4 @@ def _mean_log_prob(row, dataset):
             "pseudo_perplexity": pseudo_ppl,
             "naturalness": naturalness,
         }
-    )
-
-
-def run_naturalness(model_name: str, model_path: str, config: NaturalnessConfig):
-
-    # run per position inference
-    run_per_pos(model_name, model_path, config)
-
-    # load per position inference results
-    data_name = f"{config.dataset_name}-" if config.dataset_name is not None else ""
-    results = load_reference_data(
-        f"{config.output_dir}/results/{model_name}_{data_name}per-position-inference.parquet"
-    )
-
-    # process
-    df = results.apply(_mean_log_prob, dataset=data_name, axis=1)
-
-    # save processed results
-    df.to_parquet(
-        f"{config.output_dir}/results/{model_name}_{data_name}naturalness.parquet"
     )
