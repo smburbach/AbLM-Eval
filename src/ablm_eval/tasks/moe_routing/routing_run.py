@@ -13,6 +13,8 @@ __all__ = ["run_routing_analysis"]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# TODO: fix chains for unpaired sequences, using the locus_column
+
 
 def _parse_regions(
     chains,
@@ -24,14 +26,13 @@ def _parse_regions(
     Expects CDR masks to label FR regions with 0 and CDR regions with 1.
     """
 
-    regions, region_lengths = {}, {}
+    regions = {}
     pos = 0
 
     # helper to add single token to dicts
     def add_token(label):
         nonlocal pos
         regions[pos] = label
-        region_lengths[label] = region_lengths.get(label, 0) + 1
         pos += 1
 
     # BOS
@@ -46,7 +47,7 @@ def _parse_regions(
         for char in chain["mask"]:
             # new region
             if char != prev_char:
-                label = f"{label_map[char]}{chain['prefix']}{count[char]}"
+                label = f"{label_map[char]}{chain['chain_name']}{count[char]}"
                 count[char] += 1
 
             add_token(label)
@@ -64,71 +65,77 @@ def _parse_regions(
     for i in range(pad_count):
         add_token("PAD")
 
-    return regions, region_lengths
+    return regions
 
 
-def _process_outputs(test_data, config: RoutingConfig):
+def _process_outputs(test_data: pd.DataFrame, config: RoutingConfig):
+    data = []
+    max_len = config.max_len
+    chain_names = config.dataset_columns.chain_names
+    cdr_cols = config.dataset_columns.cdr_columns
+    chain_cols = config.dataset_columns.chain_columns
+    locus_col = config.dataset_columns.locus_column
 
-    data, lengths = [], []
+    mapping = {"H": "H", "L": "L", "K": "L"}
+
     for row in tqdm(
         test_data.itertuples(), total=len(test_data), desc="Processing outputs"
     ):
 
-        sequence_id = getattr(row, config.id_column)
+        sequence_id = getattr(row, config.dataset_columns.id_column)
 
         # map cdr regions
-        region_map, region_lengths = _parse_regions(
-            chains=[
-                {"prefix": "H", "mask": getattr(row, config.heavy_cdr_column)},
-                {"prefix": "L", "mask": getattr(row, config.light_cdr_column)},
-            ],
-            max_length=config.max_len,
-        )
+        chains = []
+        for i, name in enumerate(chain_names):
+            key = (
+                name[0].upper()
+                if config.antibody_datatype == "paired"
+                else getattr(row, locus_col)[i][0].upper()
+            )
+            chain_name = mapping.get(key, "")
+            mask = getattr(row, cdr_cols[i])
+            chains.append({"chain_name": chain_name, "mask": mask})
+
+        region_map = _parse_regions(chains, max_length=max_len)
 
         # sequence
-        seq = list(
-            "X"
-            + getattr(row, config.heavy_column)
-            + "X"
-            + getattr(row, config.heavy_column)
-        )
-        if len(seq) < config.max_len:
-            seq.extend(["X"] * (config.max_len - len(seq)))
-        else:
-            seq = seq[: config.max_len]
+        seq = ["X"]  # BOS
+        for i, col in enumerate(chain_cols):
+            seq += list(getattr(row, col))
+            if i < len(chain_cols) - 1:
+                seq.append("X")  # separator
+        seq.append("X")  # EOS
+        seq += ["X"] * (max_len - len(seq))  # padding
 
-        # length data
-        lengths.append({"sequence_id": sequence_id, **region_lengths})
-
-        # extract data
+        # extract
         for layer, expert_idxs in enumerate(row.balmmoe_output["expert_indexes"]):
-            expert_to_positions = {
+            exp2pos = {
                 eid: set(idxs[idxs != -1].tolist())
                 for eid, idxs in enumerate(expert_idxs)
             }
 
-            position_to_experts = {}
-            for eid, positions in expert_to_positions.items():
-                for pos in positions:
-                    position_to_experts.setdefault(pos, []).append(eid)
+            pos2exp = {}
+            for eid, pos_set in exp2pos.items():
+                for p in pos_set:
+                    pos2exp.setdefault(p, []).append(eid)
 
-            for pos in range(config.max_len):
-                experts = position_to_experts.get(
+            for pos in range(max_len):
+                experts = pos2exp.get(
                     pos, [pd.NA]
                 )  # NA if token is not sent to any expert
-                for expert_id in experts:
+                for eid in experts:
                     data.append(
                         {
                             "sequence_id": sequence_id,
                             "layer": layer,
-                            "expert_id": expert_id,
+                            "expert_id": eid,
                             "token_position": pos,
                             "amino_acid": seq[pos],
                             "region": region_map.get(pos, "Unknown"),
                         }
                     )
 
-    return pd.DataFrame(data), pd.DataFrame(lengths)
+    return pd.DataFrame(data)
 
 
 def _inference(model, tokenized_dataset) -> list:
@@ -150,6 +157,7 @@ def _inference(model, tokenized_dataset) -> list:
             outputs.append(move_to_cpu(output))
     return outputs
 
+
 def _tensor_to_python(obj):
     if isinstance(obj, torch.Tensor):
         return obj.item() if obj.ndim == 0 else obj.tolist()
@@ -159,8 +167,8 @@ def _tensor_to_python(obj):
         return [_tensor_to_python(i) for i in obj]
     elif isinstance(obj, tuple):
         return tuple(_tensor_to_python(i) for i in obj)
-    else:
-        return obj
+    return obj
+
 
 def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig):
 
@@ -168,17 +176,6 @@ def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig
     model, tokenizer = load_model_and_tokenizer(model_path, task="mlm")
     model = model.to(device)
     model.eval()
-
-    # update keep_columns
-    (config.keep_columns).extend(
-        [
-            config.id_column,
-            config.heavy_column,
-            config.light_column,
-            config.heavy_cdr_column,
-            config.light_cdr_column,
-        ]
-    )
 
     # load & process dataset
     tokenized_dataset = load_and_tokenize(
@@ -195,19 +192,12 @@ def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig
     data["balmmoe_output"] = outputs
 
     # process outputs
-    extracted, length_reference = _process_outputs(data, config)
+    extracted = _process_outputs(data, config)
     extracted["model"] = model_name
-    length_reference["model"] = model_name
 
-    # save raw results
+    # save results
     data["balmmoe_output"] = data["balmmoe_output"].apply(_tensor_to_python)
-    data.to_parquet(
-        f"{config.output_dir}/results/{model_name}_raw-outputs.parquet"
-    )
-    # save processed results
+    data.to_parquet(f"{config.output_dir}/results/{model_name}_raw-outputs.parquet")
     extracted.to_parquet(
         f"{config.output_dir}/results/{model_name}_routing_results.parquet"
-    )
-    length_reference.to_parquet(
-        f"{config.output_dir}/results/{model_name}_routing_length-reference.parquet"
     )

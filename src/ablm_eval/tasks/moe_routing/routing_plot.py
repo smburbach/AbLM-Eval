@@ -26,6 +26,60 @@ REGIONS = [
 ]  # excluding BOS, SEP, & EOS
 
 
+def routing_compare(results_dir, output_dir, **kwargs):
+
+    summary_rows = []
+
+    for file in Path(results_dir).glob("*routing_results.parquet"):
+        df = pd.read_parquet(file)
+        model_name = df["model"].iloc[0]
+
+        num_layers = df["layer"].nunique()
+        num_experts = df["expert_id"].dropna().nunique()
+        full_df = pd.DataFrame(
+            [(l, e) for l in range(num_layers) for e in range(num_experts)],
+            columns=["layer", "expert_id"],
+        )
+
+        expert_balance_df, mean_balance = _expert_balance(df, full_df)
+        region_means, layer_means, layer_stderr = _multi_region_heatmap(
+            df, full_df, expert_balance_df, model_name, output_dir
+        )
+
+        row = {
+            "model": model_name,
+            "mean_balance": mean_balance,
+        }
+
+        # Add region means as individual columns
+        for region, val in region_means.items():
+            row[f"{region}_mean"] = val
+
+        # Add layer means as lists per region
+        for region, layers in layer_means.items():
+            row[f"{region}_layer_means"] = [
+                layers.get(i, None) for i in range(num_layers)
+            ]
+
+        # Add layer std err as lists per region
+        for region, layers in layer_stderr.items():
+            row[f"{region}_layer_stderr"] = [
+                layers.get(i, None) for i in range(num_layers)
+            ]
+
+        summary_rows.append(row)
+
+    # convert to df & sort
+    df = pd.DataFrame(summary_rows)
+    df_sorted = df.sort_values("model")
+
+    # plot CDRH3 summary
+    _plot_region_layer_means(df_sorted, region="CDRH3", output_dir=output_dir)
+
+    # save
+    df_sorted.to_csv(f"{output_dir}/routing_summary.csv", index=False)
+
+
 def _expert_balance(extracted, full_df):
     expert_balance = (
         extracted.groupby(["sequence_id", "layer", "expert_id"], dropna=False)
@@ -98,7 +152,7 @@ def _multi_region_heatmap(
 
         # plot
         sns.heatmap(
-            heatmap_data, annot=True, fmt=".1f", cmap="Blues", cbar=True, ax=axes[i]
+            heatmap_data, annot=False, fmt=".1f", cmap="Blues", cbar=True, ax=axes[i]
         )
         axes[i].set_title(f"{region} (mean={mean_region:.1f}%)")
         axes[i].set_xlabel("Expert ID")
@@ -168,57 +222,3 @@ def _plot_region_layer_means(summary_df, region, output_dir):
         bbox_inches="tight",
         dpi=300,
     )
-
-
-def routing_compare(results_dir, output_dir, **kwargs):
-
-    summary_rows = []
-
-    for file in Path(results_dir).glob("*routing_results.parquet"):
-        df = pd.read_parquet(file)
-        model_name = df["model"].iloc[0]
-
-        num_layers = df["layer"].nunique()
-        num_experts = df["expert_id"].dropna().nunique()
-        full_df = pd.DataFrame(
-            [(l, e) for l in range(num_layers) for e in range(num_experts)],
-            columns=["layer", "expert_id"],
-        )
-
-        expert_balance_df, mean_balance = _expert_balance(df, full_df)
-        region_means, layer_means, layer_stderr = _multi_region_heatmap(
-            df, full_df, expert_balance_df, model_name, output_dir
-        )
-
-        row = {
-            "model": model_name,
-            "mean_balance": mean_balance,
-        }
-
-        # Add region means as individual columns
-        for region, val in region_means.items():
-            row[f"{region}_mean"] = val
-
-        # Add layer means as lists per region
-        for region, layers in layer_means.items():
-            row[f"{region}_layer_means"] = [
-                layers.get(i, None) for i in range(num_layers)
-            ]
-
-        # Add layer std err as lists per region
-        for region, layers in layer_stderr.items():
-            row[f"{region}_layer_stderr"] = [
-                layers.get(i, None) for i in range(num_layers)
-            ]
-
-        summary_rows.append(row)
-
-    # convert to df & sort
-    df = pd.DataFrame(summary_rows)
-    df_sorted = df.sort_values("model")
-
-    # plot CDRH3 summary
-    _plot_region_layer_means(df_sorted, region="CDRH3", output_dir=output_dir)
-
-    # save
-    df_sorted.to_csv(f"{output_dir}/routing_summary.csv", index=False)

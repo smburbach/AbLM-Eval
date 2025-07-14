@@ -145,6 +145,7 @@ class BaseDatasetConfig:
             for col in (
                 "sequence",
                 self.dataset_columns.id_column,
+                self.dataset_columns.locus_column,
                 *(self.dataset_columns.chain_columns or []),
                 *(self.dataset_columns.cdr_columns or []),
                 *(self.dataset_columns.mutation_columns or []),
