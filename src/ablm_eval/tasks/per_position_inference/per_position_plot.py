@@ -52,7 +52,7 @@ def _extract(df: pd.DataFrame, dataset_columns: dict) -> pd.DataFrame:
 
     for _, r in df.iterrows():
         sep = r["separator"]
-        seqs = r["sequence"].split(sep)
+        seqs = [s for s in r["sequence"].split(sep) if s]
         losses = r["loss"]
         preds = r["prediction"]
 

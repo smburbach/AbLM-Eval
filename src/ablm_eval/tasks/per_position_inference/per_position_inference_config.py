@@ -34,7 +34,7 @@ class PerPositionConfig(BaseDatasetConfig):
         Maximum tokenization length for input sequences.
     truncate : bool, default=False
         Whether to truncate sequences longer than `max_len`.
-    add_special_tokens : bool, default=False
+    add_special_tokens : bool, default=True
         Whether to include special tokens in tokenization.
     num_proc : int, default=128
         Number of parallel processes to use for dataset preparation.
@@ -56,7 +56,7 @@ class PerPositionConfig(BaseDatasetConfig):
     padding: Union[bool, str] = False
     max_len: int = None
     truncate: bool = False
-    add_special_tokens: bool = False
+    add_special_tokens: bool = True
     num_proc: int = 128
 
     # output

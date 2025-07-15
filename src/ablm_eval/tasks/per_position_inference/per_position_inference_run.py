@@ -17,14 +17,22 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def _inference_batched(model, tokenizer, input_ids):
     seq_len = input_ids.shape[0]
 
+    # special tokens mask
+    special_token_ids = set(tokenizer.all_special_ids)
+    is_not_special = torch.tensor(
+        [token_id not in special_token_ids for token_id in input_ids],
+        dtype=torch.bool
+    )
+    valid_positions = torch.where(is_not_special)[0]
+    num_valid = valid_positions.shape[0]
+
     # create a batch of inputs with one position masked at a time
-    masked_inputs = input_ids.repeat(seq_len, 1)
+    masked_inputs = input_ids.repeat(num_valid, 1)
     labels = torch.full_like(masked_inputs, -100)
 
     # mask positions diagonally, one at a time
-    diagonal_idxs = torch.arange(seq_len)
-    masked_inputs[diagonal_idxs, diagonal_idxs] = tokenizer.mask_token_id
-    labels[diagonal_idxs, diagonal_idxs] = input_ids
+    masked_inputs[range(num_valid), valid_positions] = tokenizer.mask_token_id
+    labels[range(num_valid), valid_positions] = input_ids[valid_positions]
 
     # send to device
     masked_inputs = masked_inputs.to(device)
@@ -46,7 +54,7 @@ def _inference_batched(model, tokenizer, input_ids):
         ppl = torch.exp(ce_loss)
 
         # get predictions
-        masked_logits = logits[diagonal_idxs, diagonal_idxs]
+        masked_logits = logits[range(num_valid), valid_positions]
         probs = masked_logits.softmax(dim=-1)
         pred_tokens = masked_logits.argmax(dim=-1)
         pred_strings = [tokenizer.decode([t]) for t in pred_tokens]
