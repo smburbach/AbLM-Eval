@@ -32,7 +32,7 @@ def run_naturalness(model_name: str, model_path: str, config: NaturalnessConfig)
 def _mean_log_prob(row, dataset):
 
     seq_log_probs = []
-    for probs, germ_tok in zip(row.probabilities, row.tokenized_sequence):
+    for probs, germ_tok in zip(row.probabilities, row.tokenized_seq_wo_special):
         probs = torch.tensor(probs)
         log_probs = torch.log(probs)
 

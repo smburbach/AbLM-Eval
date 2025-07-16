@@ -56,5 +56,5 @@ class NaturalnessConfig(BaseDatasetConfig):
     padding: Union[bool, str] = False
     max_len: int = None
     truncate: bool = False
-    add_special_tokens: bool = False
+    add_special_tokens: bool = True
     num_proc: int = 128
