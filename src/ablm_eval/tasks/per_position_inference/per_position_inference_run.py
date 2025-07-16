@@ -15,13 +15,13 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def _inference_batched(model, tokenizer, input_ids):
-    seq_len = input_ids.shape[0]
 
     # special tokens mask
     special_token_ids = set(tokenizer.all_special_ids)
+    special_token_ids.remove(tokenizer.unk_token_id)  # keep unk token
     is_not_special = torch.tensor(
-        [token_id not in special_token_ids for token_id in input_ids],
-        dtype=torch.bool
+        [token_id.item() not in special_token_ids for token_id in input_ids],
+        dtype=torch.bool,
     )
     valid_positions = torch.where(is_not_special)[0]
     num_valid = valid_positions.shape[0]
@@ -50,7 +50,7 @@ def _inference_batched(model, tokenizer, input_ids):
             ignore_index=-100,
             reduction="none",
         )
-        ce_loss = ce_loss.view(seq_len, -1).sum(dim=1)
+        ce_loss = ce_loss.view(num_valid, -1).sum(dim=1)
         ppl = torch.exp(ce_loss)
 
         # get predictions
@@ -61,6 +61,9 @@ def _inference_batched(model, tokenizer, input_ids):
 
     return {
         "tokenized_sequence": input_ids.tolist(),
+        "tokenized_seq_wo_special": [
+            t.item() for t in input_ids if t.item() not in special_token_ids
+        ],
         "loss": ce_loss.tolist(),
         "perplexity": ppl.tolist(),
         "probabilities": probs.tolist(),

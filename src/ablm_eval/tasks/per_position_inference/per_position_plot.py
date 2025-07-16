@@ -62,12 +62,21 @@ def _extract(df: pd.DataFrame, dataset_columns: dict) -> pd.DataFrame:
             end = start + len(seq)
 
             # extract
+            loss_slice = losses[start:end]
+            pred_slice = preds[start:end]
+            seq_list = list(seq)
+
+            # length check
+            assert len(loss_slice) == len(seq_list)
+            assert len(pred_slice) == len(seq_list)
+
+            # append results
             new_cols[f"{chain}_loss"].append(losses[start:end])
             new_cols[f"{chain}_pred"].append(preds[start:end])
             new_cols[f"{chain}_sequence"].append(list(seq))
 
             # update start idx
-            start = end + 1
+            start = end
 
     return df.assign(**new_cols)
 
