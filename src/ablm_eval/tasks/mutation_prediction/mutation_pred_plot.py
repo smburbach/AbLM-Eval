@@ -7,6 +7,37 @@ import matplotlib.pyplot as plt
 __all__ = ["mut_pred_compare"]
 
 
+def mut_pred_compare(results_dir, output_dir, **kwargs):
+    # load results
+    data = {}
+    for file in Path(results_dir).glob("*mutation-analysis.parquet"):
+        df = pd.read_parquet(file)
+        model_name = df["model"].iloc[0]
+        data[model_name] = df
+
+    # plot distribution of all predicted mutations
+    all_mutations = _filter_positions(
+        data, filter_column="predicted_germ", filter_bool=False
+    )
+    _plot_histogram(
+        all_mutations, output_dir=output_dir, plot_desc="all-predicted-mutations"
+    )
+
+    # plot distribution of all correctly placed predicted mutations
+    true_mutations = _filter_positions(
+        data, filter_column="correct_position", filter_bool=True
+    )
+    _plot_histogram(
+        true_mutations,
+        output_dir=output_dir,
+        plot_desc="true-positions-predicted-mutations",
+    )
+
+    # plot ratios of position, chemical and aa matches
+    ratio_data = _compute_match_ratios(data)
+    _plot_match_ratios(ratio_data, output_dir=output_dir)
+
+
 def _filter_positions(dict, filter_column, filter_bool):
     positions = {}
     for model, df in dict.items():
@@ -145,34 +176,3 @@ def _plot_match_ratios(ratio_dict, output_dir: str = None):
         bbox_inches="tight",
         dpi=300,
     )
-
-
-def mut_pred_compare(results_dir, output_dir, **kwargs):
-    # load results
-    data = {}
-    for file in Path(results_dir).glob("*mutation-analysis.parquet"):
-        df = pd.read_parquet(file)
-        model_name = df["model"].iloc[0]
-        data[model_name] = df
-
-    # plot distribution of all predicted mutations
-    all_mutations = _filter_positions(
-        data, filter_column="predicted_germ", filter_bool=False
-    )
-    _plot_histogram(
-        all_mutations, output_dir=output_dir, plot_desc="all-predicted-mutations"
-    )
-
-    # plot distribution of all correctly placed predicted mutations
-    true_mutations = _filter_positions(
-        data, filter_column="correct_position", filter_bool=True
-    )
-    _plot_histogram(
-        true_mutations,
-        output_dir=output_dir,
-        plot_desc="true-positions-predicted-mutations",
-    )
-
-    # plot ratios of position, chemical and aa matches
-    ratio_data = _compute_match_ratios(data)
-    _plot_match_ratios(ratio_data, output_dir=output_dir)
