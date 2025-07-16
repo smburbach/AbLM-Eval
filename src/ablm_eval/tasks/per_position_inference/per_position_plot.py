@@ -94,6 +94,8 @@ def _process_regions(df: pd.DataFrame, dataset_columns: dict):
             return "mutation_unknown"
         return "mutated" if mut_val else "unmutated"
 
+    mapping = {"H": "heavy", "L": "light", "K": "light"}
+
     data = []
     # loop through rows
     for _, row in df.iterrows():
@@ -109,7 +111,7 @@ def _process_regions(df: pd.DataFrame, dataset_columns: dict):
             locus = (
                 chain
                 if row["antibody_datatype"] == "paired"
-                else row.get(dataset_columns["locus_column"], chain)
+                else mapping.get(row.get(dataset_columns["locus_column"]), chain)
             )
 
             # segment regions
