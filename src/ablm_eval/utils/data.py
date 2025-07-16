@@ -36,7 +36,7 @@ def load_reference_data(path: str, keep_columns: Optional[list] = None) -> pd.Da
 
 def _generate_sequence(dataset, column_names, config):
 
-    # extract column and seperator info
+    # extract column and separator info
     dataset_columns = config.dataset_columns
     n_chains = len(dataset_columns.chain_names)
     chain_columns = dataset_columns.chain_columns
@@ -55,7 +55,7 @@ def _generate_sequence(dataset, column_names, config):
             seqs = [x[col] for col in chain_columns]
             return {"sequence": separator.join(seqs)}
         
-        # concat chains with seperator
+        # concat chains with separator
         dataset = dataset.map(concat_chains)
 
     return dataset

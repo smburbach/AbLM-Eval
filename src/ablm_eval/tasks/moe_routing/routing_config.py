@@ -23,14 +23,14 @@ class RoutingConfig(BaseDatasetConfig):
         If None, defaults are generated based on `antibody_datatype`.
     dataset_name : str, optional
         Short name used for constructing `task_dir`.
-    separator : str, default '<cls>'
+    separator : str, default='<cls>'
         Special token used to separate chain sequences.
     output_dir : str, optional
         Base directory for saving outputs.
 
     padding : bool or str, default="max_length"
         Controls padding behavior.
-    max_len : int, odefault=256
+    max_len : int, default=256
         Maximum tokenization length for input sequences.
     truncate : bool, default=True
         Whether to truncate sequences longer than `max_len`.

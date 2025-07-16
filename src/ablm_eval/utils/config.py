@@ -8,7 +8,7 @@ __all__ = ["DatasetColumns", "BaseDatasetConfig"]
 @dataclass
 class DatasetColumns:
     """
-    Define custom collum names for provided dataset.
+    Define custom column names for provided dataset.
     Values not provided with be set to defaults based on datatype and AIRR standards.
 
     Parameters
@@ -25,7 +25,7 @@ class DatasetColumns:
     id_column : str, default="sequence_id"
         Identifier column name.
     locus_column: str, optional
-        Column name containting the locus information for unpaired sequences.
+        Column name containing the locus information for unpaired sequences.
     Methods
     -------
     apply_defaults(datatype)
