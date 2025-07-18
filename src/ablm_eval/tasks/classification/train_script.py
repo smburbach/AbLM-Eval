@@ -11,38 +11,61 @@ from ablm_eval.utils import (
     ComputeMetricsForSequenceClassification,
 )
 from ablm_eval.tasks import ClassificationConfig
+from ablm_eval.utils import DatasetColumns
 
 
 def _parse_config(config_json):
     config_dict = json.loads(config_json)
+
+    # convert dataset_columns dict to DatasetColumns object
+    if isinstance(config_dict.get("dataset_columns"), dict):
+        config_dict["dataset_columns"] = DatasetColumns(
+            **config_dict["dataset_columns"]
+        )
+
+    # convert training_args dict to TrainingArguments object
+    if isinstance(config_dict.get("training_args"), dict):
+        config_dict["training_args"] = TrainingArguments(**config_dict["training_args"])
+
+    # convert data_path keys to ints
+    if "data_path" in config_dict:
+        config_dict["data_path"] = {
+            int(k): v for k, v in config_dict["data_path"].items()
+        }
+
     return ClassificationConfig(**config_dict)
 
 
-def _def_training_args(run_name, model_name, config: ClassificationConfig):
-    training_args = TrainingArguments(
-        run_name=run_name,
-        seed=config.seed,
-        bf16=config.bf16,
-        fp16=config.fp16,
-        # train
-        learning_rate=config.learning_rate,
-        per_device_train_batch_size=config.train_batch_size,
-        num_train_epochs=config.epochs,
-        warmup_ratio=config.warmup_ratio,
-        lr_scheduler_type=config.lr_scheduler_type,
-        # eval
-        eval_strategy=config.eval_strategy,
-        eval_steps=config.eval_steps,
-        per_device_eval_batch_size=config.eval_batch_size,
-        eval_accumulation_steps=config.eval_accumulation_steps,
-        # saving & logging
-        logging_first_step=config.logging_first_step,
-        logging_steps=config.logging_steps,
-        save_strategy=config.save_strategy,
-        output_dir=f"{config.output_dir}/checkpoints/{run_name}",
-        report_to=config.report_to,
-        logging_dir=f"{config.output_dir}/logs/{run_name}",
-    )
+def _def_training_args(run_name, config):
+    if hasattr(config, "training_args") and config.training_args is not None:
+        training_args = config.training_args
+    else:
+        # fallback to defaults
+        training_args = TrainingArguments(
+            run_name=run_name,
+            seed=42,
+            fp16=True,
+            learning_rate=1e-4,
+            per_device_train_batch_size=32,
+            num_train_epochs=3,
+            warmup_ratio=0.1,
+            lr_scheduler_type="linear",
+            eval_strategy="steps",
+            eval_steps=250,
+            per_device_eval_batch_size=128,
+            eval_accumulation_steps=50,
+            logging_steps=50,
+            save_strategy="no",
+            logging_first_step=True,
+            output_dir=f"{config.output_dir}/checkpoints/{run_name}",
+            logging_dir=f"{config.output_dir}/logs/{run_name}",
+            report_to="none",
+        )
+
+    # always enforce output_dir and run_name
+    training_args.output_dir = f"{config.output_dir}/checkpoints/{run_name}"
+    training_args.run_name = run_name
+
     return training_args
 
 
@@ -71,10 +94,7 @@ def main(
         for param in model.base_model.parameters():
             param.requires_grad = False
 
-    datasets = {
-        "train": f"{config.dataset_dir}/{config.file_prefix}_train{fold_itr}.csv",
-        "test": f"{config.dataset_dir}/{config.file_prefix}_test{fold_itr}.csv",
-    }
+    datasets = config.data_path[int(fold_itr)]
 
     # load & process dataset
     tokenized_dataset = load_and_tokenize(
@@ -84,7 +104,7 @@ def main(
     # inference
     trainer = Trainer(
         model,
-        args=_def_training_args(run_name, model_name, config),
+        args=_def_training_args(run_name, config),
         processing_class=tokenizer,
         train_dataset=tokenized_dataset["train"],
         eval_dataset=tokenized_dataset["test"],
