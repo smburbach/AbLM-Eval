@@ -1,3 +1,7 @@
+import pathlib
+import yaml
+import subprocess
+from importlib.resources import files
 from dataclasses import dataclass, field
 from typing import Dict, Optional, Union, Literal
 
@@ -16,10 +20,9 @@ class ClassificationConfig(BaseDatasetConfig):
 
     Parameters
     ----------
-    dataset_dir : str
-        Path to the directory containing the dataset files.
-    file_prefix : str
-        Prefix for the dataset files (e.g., 'hd-0_cov-1' for the file 'hd-0_cov-1_train{i}.csv', where i is the fold).
+    data_path : Dict[int, Dict[str, str]]
+        Dictionary containing the paths to the train and test datasets, organized by fold.
+        Example: {0: {"train": "/path/to/train_fold0.csv", "test": "/path/to/test_fold0.csv"}}
 
     launcher : {"accelerate", "python"}, default="accelerate"
         Launcher to use to train classification models.
@@ -103,3 +106,40 @@ class ClassificationConfig(BaseDatasetConfig):
     wandb_project: str = None
     wandb_run_group: str = None
     wandb_job_type: str = None
+
+    @staticmethod
+    def override_accelerate_config(task_name: str, task_dir: pathlib.Path):
+        from .. import classification
+
+        # get default
+        default_config_path = files(classification).joinpath(
+            "default_accelerate_config.yaml"
+        )
+        default_config = yaml.safe_load(default_config_path.read_text())
+
+        print("\nThe default accelerate config for classification is:")
+        print(yaml.dump(default_config, sort_keys=False, default_flow_style=False))
+
+        config_path = task_dir / f"{task_name}_accelerate_config.yaml"
+
+        # validate user response
+        while True:
+            response = (
+                input(
+                    f"Would you like to setup a different accelerate config for {task_name} classification? (yes/no): "
+                )
+                .strip()
+                .lower()
+            )
+            if response in ("yes", "no"):
+                break
+            print("Invalid response. Please enter 'yes' or 'no'.")
+
+        if response == "yes":
+            subprocess.run(
+                ["accelerate", "config", "--config_file", str(config_path)],
+                check=True,
+            )
+        else:
+            with open(config_path, "w") as f:
+                yaml.dump(default_config, f, sort_keys=False)

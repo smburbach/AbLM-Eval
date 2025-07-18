@@ -16,38 +16,6 @@ def _check_dir(path: pathlib.Path):
         raise Exception(f"The directory '{path}' exists and is not empty!")
 
 
-def _user_prompt(prompt: str) -> bool:
-    while True:
-        response = input(prompt + " (yes/no): ").strip().lower()
-        if response in ("yes", "no"):
-            return response == "yes"
-        print("Invalid response. Please enter 'yes' or 'no'.")
-
-
-def _override_accelerate_config(task_name: str, task_dir: pathlib.Path):
-    from ..tasks import classification
-
-    # get default
-    default_config_path = files(classification).joinpath(
-        "default_accelerate_config.yaml"
-    )
-    default_config = yaml.safe_load(default_config_path.read_text())
-
-    # print default
-    print("\nThe default accelerate config for classification is:")
-    print(yaml.dump(default_config, sort_keys=False, default_flow_style=False))
-
-    # prompt for custom config
-    config_path = task_dir / f"{task_name}_accelerate_config.yaml"
-    if _user_prompt(
-        f"Would you like to setup a different accelerate config for {task_name} classification?"
-    ):
-        subprocess.run(["accelerate", "config", "--config_file", str(config_path)])
-    else:
-        with open(config_path, "w") as f:
-            yaml.dump(default_config, f, sort_keys=False)
-
-
 def create_results_dir(output_dir: str, configs: list, ignore_existing: bool):
     """
     Create directory structure for results.
@@ -77,5 +45,11 @@ def create_results_dir(output_dir: str, configs: list, ignore_existing: bool):
 
         # add accelerate config to classification task dir
         from ..tasks import ClassificationConfig
-        if isinstance(config, ClassificationConfig):
-            _override_accelerate_config(config.dataset_name, task_path)
+
+        if (
+            isinstance(config, ClassificationConfig)
+            and getattr(config, "launcher") == "accelerate"
+        ):
+            ClassificationConfig.override_accelerate_config(
+                config.dataset_name, task_path
+            )

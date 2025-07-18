@@ -84,26 +84,19 @@ def run_classification(model_name: str, model_path: str, config: ClassificationC
 
                 # shared args
                 shared = [
-                    "--fold_itr",
-                    str(fold),
-                    "--temp_dir",
-                    str(temp_dir),
-                    "--config",
-                    config_json,
-                    "--model_name",
-                    model_name,
-                    "--model_path",
-                    model_path,
+                    f"--fold_itr={str(fold)}",
+                    f"--temp_dir={str(temp_dir)}",
+                    f"--config={config_json}",
+                    f"--model_name={model_name}",
+                    f"--model_path={model_path}",
                 ]
                 # launcher args
                 if config.launcher == "accelerate":
                     launcher = [
                         "accelerate",
                         "launch",
-                        "--main_process_port",
-                        str(port),
-                        "--config_file",
-                        config_path,
+                        f"--main_process_port={str(port)}",
+                        f"--config_file={config_path}",
                         script_path,
                     ]
                 elif config.launcher == "python":
