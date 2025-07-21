@@ -12,9 +12,9 @@ This repository provides a flexible framework for running these tasks and compar
    cd AbLM-Eval
    ```
 
-2. Install the required dependencies:
+2. Install with the required dependencies:
    ```bash
-   pip install -r requirements.txt
+   pip install .
    ```
 
 ## Usage
@@ -39,29 +39,30 @@ See individual task directories for more info about the available config paramet
 
 | Task | Config Name | Description |
 | ---- | ----------- | ----------- |
-| [Inference](ablm_eval/tasks/inference/) | `InferenceConfig` | MLM inference on single dataset |
-| [Per-position Inference](ablm_eval/tasks/per_position_inference/) | `PerPositionConfig` | Per-position inference |
-| [Mutation Prediction](ablm_eval/tasks/mutation_prediction/) | `MutationPredConfig` | Runs per-position inference and analysis accuracy of prediction mutations |
-| [Naturalness Prediction](ablm_eval/tasks/naturalness_prediction/) | `NaturalnessConfig` | Runs per-position inference and calculates pseudo-perplexity & naturalness scores |
-| [Classification](ablm_eval/tasks/classification/) | `ClassificationConfig` | Runs multi-fold classification and summarizes results across folds. |
-| [Routing Analysis](ablm_eval/tasks/moe_routing/) | `RoutingConfig` | Analyzes routing of BALM-MoE models |
+| [Inference](src/ablm_eval/tasks/inference/) | `InferenceConfig` | MLM inference on single dataset |
+| [Per-position Inference](src/ablm_eval/tasks/per_position_inference/) | `PerPositionConfig` | Per-position inference |
+| [Mutation Prediction](src/ablm_eval/tasks/mutation_prediction/) | `MutationPredConfig` | Runs per-position inference and analysis accuracy of prediction mutations |
+| [Naturalness Prediction](src/ablm_eval/tasks/naturalness_prediction/) | `NaturalnessConfig` | Runs per-position inference and calculates pseudo-perplexity & naturalness scores |
+| [Classification](src/ablm_eval/tasks/classification/) | `ClassificationConfig` | Runs multi-fold classification and summarizes results across folds. |
+| [Routing Analysis](src/ablm_eval/tasks/moe_routing/) | `RoutingConfig` | Analyzes routing of BALM-MoE models |
 
+You are always required to provide the `antibody_datatype` ("paired" or "unpaired") and the `data_path`. You can optionally provide a DatasetColumns object, to provide column names if your dataset differs from the AIRR / abstar defaults. See [here](src/ablm_eval/utils/config.py) for more information.
 
-Create a list of the task configurations to run, for example:
+Create a list of the task configurations to run. for example:
 ```python
-from ablm_eval import InferenceConfig, PerPositionConfig
+from ablm_eval import InferenceConfig, PerPositionConfig, DatasetColumns
 
 configs = [
     InferenceConfig(
+        dataset_name="paired-test",
+        antibody_datatype = "paired",
         data_path="/path/to/inference_data.parquet",
-        batch_size=128,
-        heavy_column="sequence_aa_heavy",
-        light_column="sequence_aa_light",
     ),
     PerPositionConfig(
+        dataset_name = "unpaired",
+        antibody_datatype = "unpaired",
         data_path="/path/to/per_pos_data.parquet",
-        heavy_column="sequence_aa_heavy",
-        light_column="sequence_aa_light",
+        dataset_columns=DatasetColumns(chain_columns=["sequence"])
     ),
     # Add other configurations as needed
 ]
