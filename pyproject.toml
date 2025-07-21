@@ -20,7 +20,7 @@ dependencies = [
     "scikit-learn",
     "seaborn",
     "torch",
-    "transformers",
+    "transformers>=4.46.0",
     "tqdm",
     "wandb",
     "balm-antibody @ git+https://github.com/brineylab/BALM.git@main"
