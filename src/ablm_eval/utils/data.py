@@ -45,16 +45,15 @@ def _generate_sequence(dataset, column_names, config):
     for col in chain_columns:
         if col not in column_names:
             raise ValueError(f"The column {col} must exist in the dataset.")
-    
+
     if n_chains == 1:
-        dataset = dataset.map(
-            lambda x: {"sequence": x[chain_columns[0]]}
-        )
+        dataset = dataset.map(lambda x: {"sequence": x[chain_columns[0]]})
     else:
+
         def concat_chains(x):
             seqs = [x[col] for col in chain_columns]
             return {"sequence": separator.join(seqs)}
-        
+
         # concat chains with separator
         dataset = dataset.map(concat_chains)
 
