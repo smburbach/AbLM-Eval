@@ -13,10 +13,10 @@ Example:
 from ablm_eval import InferenceConfig
 
 config = InferenceConfig(
-    data_path="/path/to/dataset.parquet",
+    dataset_name="paired-test",
+    antibody_datatype="paired",
+    data_path="/path/to/inference_data.parquet",
     batch_size=128,
-    heavy_column="sequence_aa_heavy",
-    light_column="sequence_aa_light",
 )
 ```
 

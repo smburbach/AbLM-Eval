@@ -13,9 +13,8 @@ Example:
 from ablm_eval import NaturalnessConfig
 
 config = NaturalnessConfig(
-    dataset_name="test",
+    antibody_datatype="unpaired",
     data_path=f"/path/to/dataset.csv",
-    sequence_column="sequence_aa",
 )
 ```
 

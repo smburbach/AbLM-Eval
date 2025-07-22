@@ -13,7 +13,9 @@ Example:
 from ablm_eval import MutationPredConfig
 
 config = MutationPredConfig(
+    antibody_datatype="paired",
     data_path=f"/path/to/airr-formatted-dataset.parquet",
+    data_processed=False,
     sequence_column="sequence_germ",
 )
 ```
