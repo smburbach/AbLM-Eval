@@ -13,9 +13,8 @@ Example:
 from ablm_eval import RoutingConfig
 
 config = RoutingConfig(
+    antibody_datatype="paired",
     data_path=f"/path/to/dataset.csv",
-    heavy_column="sequence_aa_heavy",
-    light_column="sequence_aa_light",
 )
 ```
 

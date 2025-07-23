@@ -5,6 +5,7 @@ from ablm_eval import (
     ClassificationConfig,
     RoutingConfig,
     NaturalnessConfig,
+    DatasetColumns,
     evaluate_ablms,
     compare_results,
     compare_task,
@@ -22,42 +23,47 @@ def main():
     # please see the config docstrings for more information about the config parameters
     configs = [
         InferenceConfig(
-            data_path="/path/to/dataset.parquet",
-            batch_size=128,
-            heavy_column="sequence_aa_heavy",
-            light_column="sequence_aa_light",
+            dataset_name="paired-test",
+            antibody_datatype="paired",
+            data_path="/path/to/inference_data.parquet",
         ),
         PerPositionConfig(
-            dataset_name="test",
-            data_path="/path/to/dataset.csv",
-            sequence_column="sequence_aa",
+            antibody_datatype="unpaired",
+            data_path="/path/to/per_pos_data.parquet",
+            dataset_columns=DatasetColumns(
+                id_column="seq_id", chain_columns=["sequence"]
+            ),
         ),
         MutationPredConfig(
+            antibody_datatype="paired",
             data_path=f"/path/to/airr-formatted-dataset.parquet",
+            data_processed=False,
             sequence_column="sequence_germ",
         ),
         ClassificationConfig(
-            dataset_dir="/path/to/dataset",
-            file_prefix="hd-0_cov-1",
-            dataset_name="HD-CoV",
-            sequence_column="sequence",
+            dataset_name="HD-Flu-CoV",
+            data_path={
+                i: {
+                    "train": f"./class_data/hd-0_flu-1_cov-2_train{i}.csv",
+                    "test": f"./class_data/hd-0_flu-1_cov-2_test{i}.csv",
+                }
+                for i in range(5)
+            },
+            antibody_datatype="paired",
+            launcher="accelerate",
+            dataset_columns=DatasetColumns(chain_columns=["h_sequence", "l_sequence"]),
             num_folds=5,
-            num_classes=2,
-            epochs=3,
-            train_batch_size=32,
-            report_to="wandb",
-            wandb_project="HD-CoV_classification",
+            num_classes=3,
+            manually_freeze_base=True,
         ),
         NaturalnessConfig(
-            dataset_name="test",
+            antibody_datatype="unpaired",
             data_path=f"/path/to/dataset.csv",
-            sequence_column="sequence_aa",
         ),
         # compatible with BALM MoE models only
         RoutingConfig(
+            antibody_datatype="paired",
             data_path=f"/path/to/dataset.csv",
-            heavy_column="sequence_aa_heavy",
-            light_column="sequence_aa_light",
         ),
     ]
 

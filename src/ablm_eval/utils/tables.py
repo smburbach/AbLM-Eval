@@ -43,8 +43,8 @@ def table_compare(
 
     # save
     combined_df.to_csv(
-        f"{output_dir}/combined-{task_str}-results.csv", 
-        index=True # model name & dataset are the indices
+        f"{output_dir}/combined-{task_str}-results.csv",
+        index=True,  # model name & dataset are the indices
     )
 
     if return_raw_data:

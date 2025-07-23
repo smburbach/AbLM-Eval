@@ -13,9 +13,11 @@ Example:
 from ablm_eval import PerPositionConfig
 
 config = PerPositionConfig(
-    dataset_name="test",
-    data_path="/path/to/dataset.csv",
-    sequence_column="sequence_aa",
+    antibody_datatype="unpaired",
+    data_path="/path/to/per_pos_data.parquet",
+    dataset_columns=DatasetColumns(
+        id_column="seq_id", chain_columns=["sequence"]
+    ),
 )
 ```
 
@@ -36,4 +38,5 @@ results/per_pos_inference/
 |-- combined-results_mutated_median_loss.png
 |-- combined-results_unmutated_accuracy.png
 |-- combined-results_unmutated_median_loss.png
+|-- results-summary_per-pos_inference.csv
 ```
