@@ -18,7 +18,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def run_routing_analysis(model_name: str, model_path: str, config: RoutingConfig):
 
     # load model & tokenizer
-    model, tokenizer = load_model_and_tokenizer(model_path, task="mlm")
+    model, tokenizer = load_model_and_tokenizer(
+        model_path=model_path, tokenizer_path=config.tokenizer_path, task="mlm"
+    )
     model = model.to(device)
     model.eval()
 

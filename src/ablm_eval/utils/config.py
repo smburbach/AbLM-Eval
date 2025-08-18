@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, asdict
 from typing import Optional, Dict, List, Literal
 
@@ -74,7 +74,7 @@ class DatasetColumns:
 
 
 @dataclass
-class BaseDatasetConfig:
+class BaseDatasetConfig(ABC):
     """
     Configuration for loading and processing an antibody dataset.
 
@@ -121,6 +121,7 @@ class BaseDatasetConfig:
     dataset_columns: Optional[DatasetColumns] = None
     dataset_name: Optional[str] = None
     separator: str = "<cls>"
+    tokenizer_path: str | None = None
 
     # output
     output_dir: Optional[str] = None

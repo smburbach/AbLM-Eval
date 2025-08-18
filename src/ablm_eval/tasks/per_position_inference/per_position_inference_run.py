@@ -79,7 +79,9 @@ def run_per_pos(
 ):
 
     # load model & tokenizer
-    model, tokenizer = load_model_and_tokenizer(model_path, task="mlm")
+    model, tokenizer = load_model_and_tokenizer(
+        model_path=model_path, tokenizer_path=config.tokenizer_path, task="mlm"
+    )
     model = model.to(device)
     if torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)

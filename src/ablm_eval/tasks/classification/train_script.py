@@ -85,7 +85,8 @@ def main(
 
     # load model & tokenizer
     model, tokenizer = load_model_and_tokenizer(
-        model_path,
+        model_path=model_path,
+        tokenizer_path=config.tokenizer_path,
         task="classification",
         num_labels=config.num_classes,
         attention_classifier=config.attention_classifier,
