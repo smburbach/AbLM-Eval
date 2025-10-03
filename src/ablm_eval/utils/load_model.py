@@ -8,7 +8,7 @@ from balm import *  # needed to load custom balm models & tokenizer
 __all__ = ["load_model_and_tokenizer"]
 
 
-def load_model_and_tokenizer(model_path: str, task: str, **kwargs):
+def load_model_and_tokenizer(model_path: str, tokenizer_path: str, task: str, **kwargs):
     """Load a pretrained model and tokenizer.
 
     Args:
@@ -25,7 +25,8 @@ def load_model_and_tokenizer(model_path: str, task: str, **kwargs):
         tokenizer: The loaded tokenizer.
     """
 
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    tok_path = tokenizer_path if tokenizer_path is not None else model_path
+    tokenizer = AutoTokenizer.from_pretrained(tok_path)
 
     if task == "mlm":
         model = AutoModelForMaskedLM.from_pretrained(model_path, **kwargs)

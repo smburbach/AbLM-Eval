@@ -14,7 +14,9 @@ __all__ = ["run_inference"]
 def run_inference(model_name: str, model_path: str, config: InferenceConfig):
 
     # load model & tokenizer
-    model, tokenizer = load_model_and_tokenizer(model_path, task="mlm")
+    model, tokenizer = load_model_and_tokenizer(
+        model_path=model_path, tokenizer_path=config.tokenizer_path, task="mlm"
+    )
     model.eval()
 
     # load & process dataset
