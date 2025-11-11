@@ -47,8 +47,7 @@ def _merge_results(temp_dir: str, results_file: str, dataset_name: str):
 
 def run_classification(model_name: str, model_path: str, config: ClassificationConfig):
     # wandb
-    if getattr(config, "report_to", None) == "wandb":
-        _set_wandb_vars(config)
+    _set_wandb_vars(config)
 
     # convert config (data class) to json string
     config_json = json.dumps(_to_serializable_dict(config))
