@@ -44,7 +44,7 @@ def _def_training_args(run_name, config):
         training_args = TrainingArguments(
             run_name=run_name,
             seed=42,
-            fp16=True,
+            bf16=True,
             learning_rate=1e-4,
             per_device_train_batch_size=32,
             num_train_epochs=3,
