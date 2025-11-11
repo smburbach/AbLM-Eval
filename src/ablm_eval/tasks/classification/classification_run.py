@@ -53,8 +53,13 @@ def run_classification(model_name: str, model_path: str, config: ClassificationC
     config_json = json.dumps(_to_serializable_dict(config))
 
     # get training script path
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    script_path = os.path.join(current_dir, "train_script.py")
+    if config.train_script is None:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        script_path = os.path.join(current_dir, "train_script.py")
+    else:
+        script_path = str(config.train_script)
+
+    # get accelerate config
     config_path = f"{config.output_dir}/{config.dataset_name}_accelerate_config.yaml"
     with open(config_path, "r") as f:
         accelerate_config = yaml.safe_load(f)

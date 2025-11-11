@@ -101,6 +101,9 @@ class ClassificationConfig(BaseDatasetConfig):
     run_name: Optional[str] = None
     training_args: Optional[TrainingArguments] = None
 
+    # optionally provide custom train script
+    train_script: Optional[str] = None
+
     # wandb
     # if report_to = "wandb" in training args
     wandb_project: str = None
