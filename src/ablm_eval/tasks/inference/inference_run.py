@@ -44,6 +44,9 @@ def run_inference(model_name: str, model_path: str, config: InferenceConfig):
             output_dir=config.output_dir,
             report_to=config.report_to,
             per_device_eval_batch_size=config.batch_size,
+            # True multiplies each DataParallel replica's mean loss by n_gpu for models that accept
+            # loss kwargs (RoBERTa yes, ESM no), so eval_loss scaled with the GPU count
+            average_tokens_across_devices=False,
         ),
     )
     results = trainer.evaluate(tokenized_dataset)
