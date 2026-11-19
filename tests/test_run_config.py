@@ -85,3 +85,8 @@ def test_unpaired_task_with_unpaired_model_loads(tmp_path):
 def test_duplicate_model_names_are_refused(tmp_path):
     with pytest.raises(ValueError, match="currab"):
         load_run_spec(write(tmp_path, spec_with(["currab", "currab"], [PER_POSITION])))
+
+
+def test_two_tasks_with_one_output_directory_are_refused(tmp_path):
+    with pytest.raises(ValueError, match="paired-test_per_pos_inference"):
+        load_run_spec(write(tmp_path, spec_with(["currab"], [PER_POSITION, PER_POSITION])))

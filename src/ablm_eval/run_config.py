@@ -89,4 +89,10 @@ def load_run_spec(path: Path) -> RunSpec:
             fields["training_args"] = TrainingArguments(**fields["training_args"])
         tasks.append(TASKS[kind](**fields))
 
+    shared = [d for d, n in Counter(t.task_dir for t in tasks).items() if n > 1]
+    if shared:
+        raise ValueError(
+            f"tasks would share an output directory: {', '.join(shared)}; "
+            "give each a distinct dataset_name"
+        )
     return RunSpec(output_dir=Path(raw["output_dir"]), models=models, tasks=tasks)

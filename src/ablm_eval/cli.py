@@ -1,11 +1,13 @@
 """The `ablm-eval` command: run AbLM-Eval tasks on pinned models from a YAML config."""
 
+import copy
 import json
 from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated, NoReturn
 
 import typer
+import yaml
 from huggingface_hub import snapshot_download
 from rich.console import Console
 from rich.table import Table
@@ -52,7 +54,7 @@ def run(
     """Run every task in CONFIG on every model in it."""
     try:
         spec = load_run_spec(config)
-    except ValueError as err:
+    except (ValueError, KeyError, TypeError, yaml.YAMLError) as err:
         _fail(err)
     try:
         create_results_dir(str(spec.output_dir), spec.tasks, False)
@@ -62,8 +64,9 @@ def run(
     for model in spec.models:
         console.print(f"[bold]{model.name}[/bold]: {model.repo} @ {model.revision[:12]}")
         local = snapshot_download(model.repo, revision=model.revision, cache_dir=cache_dir)
-        apply_separator(spec.tasks, model)
-        _eval_model(model.name, local, spec.tasks)
+        tasks = copy.deepcopy(spec.tasks)
+        apply_separator(tasks, model)
+        _eval_model(model.name, local, tasks)
 
     if len(spec.models) > 1:
         compare_results(configs=spec.tasks)

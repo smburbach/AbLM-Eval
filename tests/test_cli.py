@@ -97,3 +97,31 @@ def test_run_matches_the_python_api(tmp_path):
             "separator": "<cls><cls>",
         }
     ]
+
+
+def test_each_model_gets_its_own_task_configs(tmp_path, monkeypatch):
+    seen = []
+
+    def fake_eval(model_name, model_path, configs):
+        (task,) = configs
+        seen.append((model_name, task.separator, task.data_path))
+        task.data_path = "processed-by-" + model_name
+
+    monkeypatch.setattr("ablm_eval.cli.snapshot_download", lambda *a, **k: str(tmp_path))
+    monkeypatch.setattr("ablm_eval.cli._eval_model", fake_eval)
+    monkeypatch.setattr("ablm_eval.cli.compare_results", lambda **k: None)
+    models = [{**TINY, "name": "a"}, {**TINY, "name": "b", "separator": "<cls>"}]
+    config = write_spec(tmp_path, tmp_path / "results", models)
+    result = CliRunner().invoke(app, ["run", str(config), "--cache-dir", str(tmp_path / "c")])
+    assert result.exit_code == 0, result.output
+    assert seen == [("a", "<cls><cls>", str(FIXTURE)), ("b", "<cls>", str(FIXTURE))]
+
+
+def test_malformed_task_field_exits_cleanly(tmp_path):
+    path = tmp_path / "run.yaml"
+    task = {k: v for k, v in PER_POSITION.items() if k != "data_path"} | {"datapath": "x"}
+    path.write_text(yaml.safe_dump({"output_dir": "r", "models": ["currab"], "tasks": [task]}))
+    result = CliRunner().invoke(app, ["run", str(path)])
+    assert result.exit_code == 1
+    assert "datapath" in result.output
+    assert "Traceback" not in result.output

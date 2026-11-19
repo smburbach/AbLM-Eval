@@ -1,6 +1,7 @@
 import pathlib
 import yaml
 import subprocess
+import sys
 from importlib.resources import files
 from dataclasses import dataclass, field
 from typing import Dict, Optional, Union, Literal
@@ -125,8 +126,9 @@ class ClassificationConfig(BaseDatasetConfig):
 
         config_path = task_dir / f"{task_name}_accelerate_config.yaml"
 
-        # validate user response
-        while True:
+        # validate user response; with no terminal (a batch job) the default is used
+        response = "no"
+        while sys.stdin.isatty():
             response = (
                 input(
                     f"Would you like to setup a different accelerate config for {task_name} classification? (yes/no): "
