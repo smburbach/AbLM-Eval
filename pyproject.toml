@@ -26,7 +26,7 @@ dependencies = [
     "tqdm",
     "typer",
     "wandb",
-    "balm-antibody @ git+https://github.com/brineylab/BALM.git@36a8001a8b2f098dd9d4d89a5a077160d26c9507"
+    "balm-antibody @ git+https://github.com/brineylab/BALM.git@a91d7b4fb44e32eec011637482aad392fe3be7ef"
 ]
 requires-python = ">=3.10"
 classifiers = [
