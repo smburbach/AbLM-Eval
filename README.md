@@ -127,3 +127,32 @@ compare_task(
 )
 ```
 
+
+## Command line
+
+`ablm-eval run config.yaml` runs every task in a YAML config on every model in it. A model is
+either one of the lab's published models, by name, or a full entry with a Hugging Face repository,
+a full commit SHA and the separator the model was trained with:
+
+```yaml
+output_dir: results/
+models:
+  - currab
+  - name: my-model
+    path: brineylab/uniform-250k
+    revision: bb2fd2338300d70da77f5df8db46ac8ac0f31a5f
+    separator: "<cls><cls>"   # null for a model trained on single chains
+tasks:
+  - task: per_position         # also: inference, mutation_prediction, naturalness,
+    dataset_name: paired-test  #       classification, routing
+    antibody_datatype: paired
+    data_path: data/paired-test.parquet
+```
+
+Each task takes the fields of its config class above; `dataset_columns` and a classification's
+`training_args` are written as mappings. Each model's separator is set on every task for that
+model, so a task does not set `separator` when its models have one. Models are downloaded at
+their pinned revision into `--cache-dir` (default `.ablm-eval-cache`), and `models.json` in the
+output directory records what ran.
+
+`ablm-eval models` lists the lab models a config can name, with their revisions and separators.
