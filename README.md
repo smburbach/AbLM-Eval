@@ -153,6 +153,8 @@ Each task takes the fields of its config class above; `dataset_columns` and a cl
 `training_args` are written as mappings. Each model's separator is set on every task for that
 model, so a task does not set `separator` when its models have one. Models are downloaded at
 their pinned revision into `--cache-dir` (default `.ablm-eval-cache`), and `models.json` in the
-output directory records what ran.
+output directory records what ran, written before any model runs. Each task's `config.json`
+records the separator per model. A run refuses task directories that already hold files; after a
+failed or preempted run, rerun with `--overwrite`.
 
 `ablm-eval models` lists the lab models a config can name, with their revisions and separators.

@@ -76,3 +76,8 @@ def test_resolve_refuses_unpinned_revision(rev):
 def test_resolve_unknown_name_names_it():
     with pytest.raises(ValueError, match="no-such-model"):
         resolve_model("no-such-model")
+
+
+def test_model_name_with_a_slash_is_refused():
+    with pytest.raises(ValueError, match="org/model"):
+        resolve_model({**TINY, "name": "org/model"})

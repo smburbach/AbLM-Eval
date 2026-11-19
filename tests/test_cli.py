@@ -57,7 +57,9 @@ def test_nonempty_output_dir_exits_cleanly(tmp_path):
     task_dir = out / load_run_spec(config).tasks[0].task_dir
     task_dir.mkdir(parents=True)
     (task_dir / "old.txt").write_text("x")
-    result = CliRunner().invoke(app, ["run", str(config), "--cache-dir", str(tmp_path / "cache")])
+    result = CliRunner().invoke(
+        app, ["run", str(config), "--cache-dir", str(tmp_path / "cache")], env={"COLUMNS": "1000"}
+    )
     assert result.exit_code == 1
     assert "not empty" in result.output
     assert "Traceback" not in result.output
@@ -125,3 +127,55 @@ def test_malformed_task_field_exits_cleanly(tmp_path):
     assert result.exit_code == 1
     assert "datapath" in result.output
     assert "Traceback" not in result.output
+
+
+@pytest.fixture
+def fake_run(tmp_path, monkeypatch):
+    """Stub the download, the evaluation and the comparison; record each model run."""
+    seen = []
+    monkeypatch.setattr("ablm_eval.cli.snapshot_download", lambda *a, **k: str(tmp_path))
+    monkeypatch.setattr("ablm_eval.cli._eval_model", lambda name, path, cfgs: seen.append(name))
+    monkeypatch.setattr("ablm_eval.cli.compare_results", lambda **k: None)
+    return seen
+
+
+TWO_MODELS = [{**TINY, "name": "a"}, {**TINY, "name": "b", "separator": "<cls>"}]
+
+
+def test_config_json_records_each_models_separator(tmp_path, fake_run):
+    out = tmp_path / "results"
+    config = write_spec(tmp_path, out, TWO_MODELS)
+    assert CliRunner().invoke(app, ["run", str(config)]).exit_code == 0
+    (record,) = out.rglob("config.json")
+    assert json.loads(record.read_text())["separator"] == {"a": "<cls><cls>", "b": "<cls>"}
+
+
+def test_overwrite_reuses_a_nonempty_output_dir(tmp_path, fake_run):
+    out = tmp_path / "results"
+    config = write_spec(tmp_path, out, TWO_MODELS)
+    task_dir = out / load_run_spec(config).tasks[0].task_dir
+    task_dir.mkdir(parents=True)
+    (task_dir / "old.txt").write_text("x")
+    result = CliRunner().invoke(app, ["run", str(config), "--overwrite"])
+    assert result.exit_code == 0, result.output
+    assert fake_run == ["a", "b"]
+
+
+def test_models_json_is_written_before_any_model_runs(tmp_path, monkeypatch):
+    out = tmp_path / "results"
+
+    def crash(*args, **kwargs):
+        raise RuntimeError("download failed")
+
+    monkeypatch.setattr("ablm_eval.cli.snapshot_download", crash)
+    CliRunner().invoke(app, ["run", str(write_spec(tmp_path, out, TWO_MODELS))])
+    assert [m["name"] for m in json.loads((out / "models.json").read_text())] == ["a", "b"]
+
+
+def test_error_text_keeps_square_brackets(tmp_path):
+    path = tmp_path / "run.yaml"
+    task = {**PER_POSITION, "task": "[bold]per_position"}
+    path.write_text(yaml.safe_dump({"output_dir": "r", "models": ["currab"], "tasks": [task]}))
+    result = CliRunner().invoke(app, ["run", str(path)], env={"COLUMNS": "1000"})
+    assert result.exit_code == 1
+    assert "[bold]per_position" in result.output

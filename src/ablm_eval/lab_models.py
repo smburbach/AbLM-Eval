@@ -26,6 +26,10 @@ class LabModel:
     separator: str | None
 
     def __post_init__(self) -> None:
+        if "/" in self.name:
+            raise ValueError(
+                f"model name {self.name!r} contains '/'; results files are named by it"
+            )
         if not _FULL_SHA.fullmatch(self.revision):
             raise ValueError(
                 f"model {self.name!r}: revision {self.revision!r} is not a full commit SHA"
