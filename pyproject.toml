@@ -55,3 +55,7 @@ include = ["ablm_eval*"]
 
 [tool.setuptools.package-data]
 "ablm_eval.tasks.classification" = ["*.yaml"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+markers = ["slow: needs a GPU and the network (downloads a model)"]

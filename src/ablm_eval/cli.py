@@ -10,6 +10,7 @@ import typer
 import yaml
 from huggingface_hub import snapshot_download
 from rich.console import Console
+from rich.markup import escape
 from rich.table import Table
 
 from .lab_models import LAB_MODELS, LabModel
@@ -24,7 +25,7 @@ console = Console(stderr=True)
 
 
 def _fail(err: Exception) -> NoReturn:
-    console.print(f"[red]error:[/red] {err}")
+    console.print(f"[red]error:[/red] {escape(str(err))}")
     raise typer.Exit(1)
 
 
@@ -50,6 +51,9 @@ def run(
     cache_dir: Annotated[Path, typer.Option(help="Where downloaded models are kept.")] = Path(
         ".ablm-eval-cache"
     ),
+    overwrite: Annotated[
+        bool, typer.Option(help="Reuse task directories that already hold files.")
+    ] = False,
 ) -> None:
     """Run every task in CONFIG on every model in it."""
     try:
@@ -57,12 +61,22 @@ def run(
     except (ValueError, KeyError, TypeError, yaml.YAMLError) as err:
         _fail(err)
     try:
-        create_results_dir(str(spec.output_dir), spec.tasks, False)
+        create_results_dir(str(spec.output_dir), spec.tasks, overwrite)
     except Exception as err:  # noqa: BLE001 - create_results_dir raises a bare Exception
         _fail(err)
 
+    (spec.output_dir / "models.json").write_text(
+        json.dumps([asdict(m) for m in spec.models], indent=2)
+    )
+    separators = {m.name: m.separator for m in spec.models}
+    for task in spec.tasks:
+        record_path = Path(task.output_dir) / "config.json"
+        record = json.loads(record_path.read_text())
+        record["separator"] = separators
+        record_path.write_text(json.dumps(record, indent=2))
+
     for model in spec.models:
-        console.print(f"[bold]{model.name}[/bold]: {model.repo} @ {model.revision[:12]}")
+        console.print(f"[bold]{escape(model.name)}[/bold]: {model.repo} @ {model.revision[:12]}")
         local = snapshot_download(model.repo, revision=model.revision, cache_dir=cache_dir)
         tasks = copy.deepcopy(spec.tasks)
         apply_separator(tasks, model)
@@ -70,9 +84,6 @@ def run(
 
     if len(spec.models) > 1:
         compare_results(configs=spec.tasks)
-    (spec.output_dir / "models.json").write_text(
-        json.dumps([asdict(m) for m in spec.models], indent=2)
-    )
 
 
 @app.command()
