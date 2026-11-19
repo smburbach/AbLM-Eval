@@ -35,8 +35,10 @@ class ClassificationConfig(BaseDatasetConfig):
         Averaging method for multi-class classification metrics. Used only when `num_classes > 2`.
     positive_label : int, default=1
         Label considered as positive for binary classification.
-    attention_classifier : bool, default=True
-        Whether to use an attention-based classifier.
+    attention_classifier : bool, optional
+        Whether to use an attention-based classifier, for models whose config defines it
+        (BALM-MoE). Unset, such a model gets True and any other model gets nothing; setting it
+        for any other model is an error.
     manually_freeze_base : bool, default=False
         Whether to manually freeze the base model. Default behavior is handled by BALM.
     padding : bool or str, default="max_length"
@@ -87,7 +89,7 @@ class ClassificationConfig(BaseDatasetConfig):
         "macro"  # only used in num_classes > 2
     )
     positive_label: int = 1
-    attention_classifier: bool = True  # extra model arg
+    attention_classifier: Optional[bool] = None
     manually_freeze_base: bool = False  # balm handles by default
 
     # tokenization
