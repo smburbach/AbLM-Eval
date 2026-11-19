@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ablm-eval"
-version = "0.0.0"
+version = "0.1.0"
 readme = "README.md"
 authors = [{name = "Sarah Burbach"}]
 license = { file = "LICENSE" }
@@ -12,18 +12,21 @@ dependencies = [
     "abutils",
     "accelerate",
     "deepspeed",
+    "huggingface_hub",
     "matplotlib",
     "numpy<2",
     "pandas",
-    "pyarrow",
+    "pyarrow<21",
     "pyyaml",
+    "rich",
     "scikit-learn",
     "seaborn",
     "torch",
     "transformers>=4.46.0",
     "tqdm",
+    "typer",
     "wandb",
-    "balm-antibody @ git+https://github.com/brineylab/BALM.git@main"
+    "balm-antibody @ git+https://github.com/brineylab/BALM.git@36a8001a8b2f098dd9d4d89a5a077160d26c9507"
 ]
 requires-python = ">=3.10"
 classifiers = [
@@ -39,6 +42,9 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/smburbach/AbLM-Eval"
+
+[project.scripts]
+ablm-eval = "ablm_eval.cli:app"
 
 [tool.setuptools]
 include-package-data = true
