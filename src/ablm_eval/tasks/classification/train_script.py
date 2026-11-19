@@ -3,7 +3,7 @@ import argparse
 from datetime import date
 
 import pandas as pd
-from transformers import TrainingArguments, Trainer
+from transformers import AutoConfig, Trainer, TrainingArguments
 
 from ablm_eval.utils import (
     load_model_and_tokenizer,
@@ -48,7 +48,7 @@ def _def_training_args(run_name, config):
             learning_rate=1e-4,
             per_device_train_batch_size=32,
             num_train_epochs=3,
-            warmup_ratio=0.1,
+            warmup_steps=0.1,
             lr_scheduler_type="linear",
             eval_strategy="steps",
             eval_steps=250,
@@ -58,7 +58,6 @@ def _def_training_args(run_name, config):
             save_strategy="no",
             logging_first_step=True,
             output_dir=f"{config.output_dir}/checkpoints/{run_name}",
-            logging_dir=f"{config.output_dir}/logs/{run_name}",
             report_to="none",
         )
 
@@ -67,6 +66,25 @@ def _def_training_args(run_name, config):
     training_args.run_name = run_name
 
     return training_args
+
+
+def _model_kwargs(attention_classifier: bool | None, model_path: str) -> dict:
+    """Keyword arguments for the classification model, from the task's model options.
+
+    `attention_classifier` reaches only models whose config defines it (BALM-MoE); transformers 5
+    passes an argument the config does not know to the model's constructor, which rejects it.
+
+    Raises:
+        ValueError: If `attention_classifier` is set for a model whose config does not define it.
+    """
+    supported = hasattr(AutoConfig.from_pretrained(model_path), "attention_classifier")
+    if attention_classifier is None:
+        return {"attention_classifier": True} if supported else {}
+    if not supported:
+        raise ValueError(
+            f"attention_classifier is set, but the config of {model_path} has no such option"
+        )
+    return {"attention_classifier": attention_classifier}
 
 
 def main(
@@ -89,7 +107,7 @@ def main(
         tokenizer_path=config.tokenizer_path,
         task="classification",
         num_labels=config.num_classes,
-        attention_classifier=config.attention_classifier,
+        **_model_kwargs(config.attention_classifier, model_path),
     )
     if config.manually_freeze_base:
         for param in model.base_model.parameters():
