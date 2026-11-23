@@ -81,3 +81,18 @@ def test_classification_from_mlm_checkpoint(models_dir, name):
         str(models_dir / name), None, task="classification", num_labels=2
     )
     assert model.config.num_labels == 2
+
+
+def test_forge_architecture_is_registered():
+    """Importing the loader must register forge's `ablm` model type.
+
+    Forge checkpoints carry no `auto_map`, so `AutoConfig.from_pretrained` resolves them only
+    through the in-process registration that `import ablm` performs. Without it the loader
+    raises "does not recognize this architecture" before reading a single weight.
+    """
+    from transformers.models.auto.configuration_auto import CONFIG_MAPPING
+
+    assert "ablm" in CONFIG_MAPPING, (
+        "load_model must import ablm; forge snapshots cannot be resolved without it"
+    )
+    assert load_model_module.ablm is not None

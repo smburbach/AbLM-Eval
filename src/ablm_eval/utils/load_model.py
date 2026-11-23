@@ -4,6 +4,7 @@ from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
 )
+import ablm  # noqa: F401  # import registers the forge "ablm" architecture; no auto_map in its config
 from balm import *  # needed to load custom balm models & tokenizer
 
 from .esm_variants import checkpoint_keys, esm_variant_for_checkpoint
