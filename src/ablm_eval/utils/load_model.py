@@ -6,6 +6,13 @@ from transformers import (
 )
 from balm import *  # needed to load custom balm models & tokenizer
 
+try:
+    # importing registers forge's "ablm" architecture; its configs carry no auto_map, and the
+    # version must be the user's own, since it is the one that wrote their checkpoint
+    import ablm
+except ImportError:
+    ablm = None
+
 from .esm_variants import checkpoint_keys, esm_variant_for_checkpoint
 
 __all__ = ["load_model_and_tokenizer"]
@@ -47,7 +54,17 @@ def load_model_and_tokenizer(model_path: str, tokenizer_path: str, task: str, **
     else:
         raise ValueError(f"Unsupported task: {task}")
 
-    config = AutoConfig.from_pretrained(model_path)
+    try:
+        config = AutoConfig.from_pretrained(model_path)
+    except ValueError as e:
+        if ablm is None and "ablm" in str(e):
+            raise ValueError(
+                f"{model_path} looks like an ablm-forge checkpoint, but ablm-forge is not "
+                "installed. Install the forge version that wrote this checkpoint "
+                "(pip install ablm-eval[forge], or your own build); importing it registers "
+                "the architecture, which the checkpoint's config cannot do on its own."
+            ) from e
+        raise
     with esm_variant_for_checkpoint(config, checkpoint_keys(model_path)):
         model, info = auto_cls.from_pretrained(model_path, output_loading_info=True, **kwargs)
     _check_loading_info(model, info, model_path, task)

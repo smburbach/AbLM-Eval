@@ -1,4 +1,5 @@
 from contextlib import nullcontext
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -81,3 +82,30 @@ def test_classification_from_mlm_checkpoint(models_dir, name):
         str(models_dir / name), None, task="classification", num_labels=2
     )
     assert model.config.num_labels == 2
+
+
+def test_forge_architecture_is_registered():
+    """With ablm-forge installed, importing the loader registers its `ablm` model type.
+
+    Forge checkpoints carry no `auto_map`, so `AutoConfig.from_pretrained` resolves them only
+    through the in-process registration that `import ablm` performs.
+    """
+    if load_model_module.ablm is None:
+        pytest.skip("ablm-forge not installed; install ablm-eval[forge] to cover forge loading")
+
+    from transformers.models.auto.configuration_auto import CONFIG_MAPPING
+
+    assert "ablm" in CONFIG_MAPPING
+
+
+def test_forge_checkpoint_without_forge_installed_says_so(tmp_path, monkeypatch):
+    """Without ablm-forge, a forge checkpoint must name the missing package, not the raw error."""
+    monkeypatch.setattr(load_model_module, "ablm", None)
+    monkeypatch.setattr(
+        load_model_module, "AutoTokenizer", SimpleNamespace(from_pretrained=lambda *a, **k: None)
+    )
+    (tmp_path / "config.json").write_text(
+        '{"model_type": "ablm-not-registered", "architectures": ["AblmForMaskedLM"]}'
+    )
+    with pytest.raises(ValueError, match="ablm-forge is not installed"):
+        load_model_and_tokenizer(str(tmp_path), None, task="mlm")
