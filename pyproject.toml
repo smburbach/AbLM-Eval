@@ -14,7 +14,7 @@ dependencies = [
     "deepspeed",
     "huggingface_hub",
     "matplotlib",
-    "numpy<2",
+    "numpy",
     "pandas",
     "pyarrow<21",
     "pyyaml",
